@@ -1,31 +1,39 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\TransactionController;
-
-// الصفحة الرئيسية
-Route::get('/', function () {
-    return redirect()->route('shifts.index');
-});
-
-// الشيفتات
-Route::prefix('shifts')->group(function () {
-    Route::get('/', [ShiftController::class, 'index'])->name('shifts.index');
-    Route::get('/create', [ShiftController::class, 'create'])->name('shifts.create');
-    Route::post('/store', [ShiftController::class, 'store'])->name('shifts.store');
-    Route::get('/{id}/close', [ShiftController::class, 'close'])->name('shifts.close');
-    Route::get('/{id}/report', [ShiftController::class, 'report'])->name('shifts.report');
-});
-
-// العمليات
-Route::prefix('transactions')->group(function () {
-    Route::get('/', [TransactionController::class, 'index'])->name('transactions.index');
-    Route::get('/create', [TransactionController::class, 'create'])->name('transactions.create');
-    Route::post('/store', [TransactionController::class, 'store'])->name('transactions.store');
-});
-// routes/web.php
 use App\Http\Controllers\TankController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/tanks/create', [TankController::class, 'create'])->name('tanks.create');
-Route::post('/tanks', [TankController::class, 'store'])->name('tanks.store');
+Route::get('/', function () {
+    return redirect()->route('dashboard');
+});
+
+// لوحة التحكم
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+// بروفايل
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+// ✅ كل الروتات اللي محتاجة لوجن
+Route::middleware('auth')->group(function () {
+
+    // Shifts
+    Route::resource('shifts', ShiftController::class);
+    Route::get('shifts/{shift}/close', [ShiftController::class, 'close'])->name('shifts.close');
+    Route::get('shifts/{shift}/report', [ShiftController::class, 'report'])->name('shifts.report');
+
+    // Transactions
+    Route::resource('transactions', TransactionController::class);
+
+    // Tanks
+    Route::resource('tanks', TankController::class);
+});
+
+require __DIR__.'/auth.php';

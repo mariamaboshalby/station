@@ -1,16 +1,20 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class ShiftController extends Controller
 {
     // عرض كل الشيفتات
     public function index()
     {
+        // بنجيب الشيفتات زي ما هي بدون ما نغير التواريخ
         $shifts = Shift::with('user')->latest()->get();
+
         return view('shifts.index', compact('shifts'));
     }
 
@@ -26,12 +30,15 @@ class ShiftController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'start_time' => 'required|date',
+            'start_time' => 'nullable|date',
         ]);
 
         Shift::create([
             'user_id' => $request->user_id,
-            'start_time' => $request->start_time,
+            // لو المدخلش وقت → نحط الوقت الحالي بتوقيت القاهرة
+            'start_time' => $request->start_time
+                ? Carbon::parse($request->start_time)
+                : now(), // now() بياخد التوقيت من config/app.php
             'end_time' => null,
         ]);
 
@@ -42,7 +49,10 @@ class ShiftController extends Controller
     public function close($id)
     {
         $shift = Shift::findOrFail($id);
-        $shift->update(['end_time' => now()]);
+        $now = now()->setTimezone('Africa/Cairo');
+        $shift->update([
+            'end_time' => $now
+        ]);
 
         return redirect()->route('shifts.index')->with('success', 'تم إغلاق الشيفت');
     }
@@ -55,4 +65,3 @@ class ShiftController extends Controller
         return view('shifts.report', compact('shift'));
     }
 }
-

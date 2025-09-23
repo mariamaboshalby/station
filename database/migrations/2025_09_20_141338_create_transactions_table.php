@@ -14,8 +14,9 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('shift_id')->constrained()->cascadeOnDelete(); // العملية دي حصلت في أي شيفت
             $table->foreignId('nozzle_id')->constrained()->cascadeOnDelete(); // العملية تمت بأي مسدس
-            $table->decimal('liters_dispensed', 20, 2); // عدد اللترات المباعة
-            $table->decimal('total_price',20, 2); // إجمالي السعر (liters * price_per_liter)
+            $table->decimal('liters_dispensed', 10, 2); // عدد اللترات المباعة
+            $table->decimal('tank_level_after', 20, 2);
+            $table->decimal('total_price',10, 2); // إجمالي السعر (liters * price_per_liter)
             $table->timestamps();
         });
 
