@@ -3,19 +3,37 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Shift extends Model
 {
-    protected $fillable = ['user_id', 'employee_name', 'start_time', 'end_time'];
+    protected $fillable = [
+        'user_id',
+        'start_time',
+        'end_time',
+    ];
 
-    public function transactions()
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+    ];
+
+    public function user(): BelongsTo
     {
-        return $this->hasMany(Transaction::class);
+        return $this->belongsTo(\App\Models\User::class);
     }
 
-    public function user()
+    // عرض البداية بتوقيت القاهرة بصيغة جاهزة
+    public function getStartTimeCairoAttribute()
     {
-        return $this->belongsTo(User::class);
+        if (! $this->start_time) return null;
+        return $this->start_time->setTimezone('Africa/Cairo')->format('Y-m-d H:i:s');
+    }
+
+    // عرض النهاية بتوقيت القاهرة بصيغة جاهزة
+    public function getEndTimeCairoAttribute()
+    {
+        if (! $this->end_time) return null;
+        return $this->end_time->setTimezone('Africa/Cairo')->format('Y-m-d H:i:s');
     }
 }

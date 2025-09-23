@@ -37,13 +37,15 @@ class TransactionController extends Controller
 
         // نفترض إن سعر اللتر في جدول fuel
         $pricePerLiter = $nozzle->tank->fuel->price_per_liter;
-
         $totalPrice = $request->liters_dispensed * $pricePerLiter;
-
+        $tank = $nozzle->tank;
+        $tank->current_level =$tank->current_level- $request->liters_dispensed;
+        $tank->save();
         Transaction::create([
             'shift_id' => $request->shift_id,
             'nozzle_id' => $request->nozzle_id,
-            'liters_dispensed' => $request->liters_dispensed,
+            'liters_dispensed' => $request->liters_dispensed,   
+            'tank_level_after' => $tank->current_level,
             'total_price' => $totalPrice,
         ]);
 

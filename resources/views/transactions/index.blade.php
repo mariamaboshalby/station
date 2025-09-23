@@ -12,7 +12,8 @@
                 <th>الطلمبه</th>
                 <th>التانك</th>
                 <th>النوع</th>
-                <th>الكمية</th>
+                  <th>السعه الحاليه</th> 
+                  <th>الكمية</th>
                 <th>التاريخ</th>
             </tr>
         </thead>
@@ -24,6 +25,7 @@
                 <td>{{ $transaction->nozzle->pump->name }}</td>
                 <td>{{ $transaction->nozzle->tank->name }}</td>
                 <td>{{ $transaction->nozzle->tank->fuel->name }}</td>
+                <td>{{ $transaction->tank_level_after}}</td>
                 <td>{{ $transaction->liters_dispensed }}</td>
                 <td>{{ $transaction->created_at }}</td>
             </tr>
