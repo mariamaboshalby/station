@@ -25,14 +25,16 @@
             font-size: 50rem;
             opacity: 0.2;
             position: absolute;
-            left: 22px;
-            transform: rotate(50deg);
+            left:22px;
+            top: -10rem;
+            transform: rotate(70deg);
         }
         .dashboard-card i {
             font-size: 10rem;
             opacity: 0.2;
             position: absolute;
             left: 22px;
+            top:1rem;
             transform: rotate(50deg);
         }
         .dashboard-card h3 {
@@ -80,7 +82,7 @@
             </a>
 
             <!-- السعة الكلية -->
-            <div class="col-lg-4 col-md-6 col-12">
+            <div class="col-lg-4 col-12">
                 <div class="dashboard-card rounded-2 p-3 bg-gradient-success">
                     <div class="box-content">
                         <h3>{{ \App\Models\Tank::sum('capacity') }}</h3>
@@ -91,7 +93,7 @@
             </div>
 
             <!-- السعة الحالية -->
-            <div class="col-lg-4 col-md-6 col-12">
+            <div class="col-lg-4 col-12">
                 <div class="dashboard-card rounded-2 p-3 bg-gradient-warning">
                     <div class="box-content">
                         <h3>{{ \App\Models\Tank::sum('current_level') }}</h3>
@@ -102,7 +104,7 @@
             </div>
 
             <!-- عدد العمليات -->
-            <div class="col-lg-4 col-md-6 col-12">
+            <div class="col-lg-4 col-12">
                 <div class="dashboard-card rounded-2 p-3 bg-gradient-danger">
                     <div class="box-content">
                         <h3>{{ \App\Models\Transaction::count() }}</h3>

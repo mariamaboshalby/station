@@ -18,9 +18,15 @@ class Shift extends Model
         'end_time' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+       public function user()
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
+    }
+
+    // العلاقة مع العمليات (transactions)
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
     }
 
     // عرض البداية بتوقيت القاهرة بصيغة جاهزة

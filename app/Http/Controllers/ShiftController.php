@@ -13,7 +13,7 @@ class ShiftController extends Controller
     public function index()
     {
         // بنجيب الشيفتات زي ما هي بدون ما نغير التواريخ
-        $shifts = Shift::with('user')->latest()->get();
+        $shifts = Shift::with('user')->latest()->paginate();
 
         return view('shifts.index', compact('shifts'));
     }
@@ -60,8 +60,13 @@ class ShiftController extends Controller
     // تقرير شيفت
     public function report($id)
     {
-        $shift = Shift::with(['transactions.nozzle.tank.fuel'])->findOrFail($id);
+        $shift = Shift::with('transactions.nozzle.tank.fuel', 'user')->find($id);
+
+        if (!$shift) {
+            return redirect()->back()->with('error', 'ليس لديه شيفتات بعد ');
+        }
 
         return view('shifts.report', compact('shift'));
     }
+
 }

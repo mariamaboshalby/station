@@ -1,42 +1,76 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <h2>الشيفتات</h2>
-        <a href="{{ route('shifts.create') }}" class="btn btn-primary mb-3">فتح شيفت جديد</a>
-        <table class="table table-bordered text-center">
-            <thead>
-                <tr>
-                    <th>الموظف</th>
-                    <th>بداية الشيفت</th>
-                    <th>نهاية الشيفت</th>
-                    <th>خيارات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($shifts as $shift)
-                    <tr>
-                        <td>{{ $shift->user->name ?? '---' }}</td>
-                        <td>
-                            {{ \Carbon\Carbon::parse($shift->start_time)->timezone('Africa/Cairo')->format('Y-m-d H:i:s') }}
-                        </td>
-                        <td>
-                            @if ($shift->end_time)
-                                {{ \Carbon\Carbon::parse($shift->end_time)->timezone('Africa/Cairo')->format('Y-m-d H:i:s') }}
-                            @else
-                                <span class="badge bg-success">مفتوح</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if (!$shift->end_time)
-                                <a href="{{ route('shifts.close', $shift->id) }}" class="btn btn-danger btn-sm">إغلاق</a>
-                            @endif
-                            <a href="{{ route('shifts.report', $shift->id) }}" class="btn btn-info btn-sm">تقرير</a>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+<div class="container" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-12">
 
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-header bg-light text-center fs-5 fw-bold d-flex justify-content-between align-items-center">
+                    <span>قائمة الشيفتات</span>
+                    <a href="{{ route('shifts.create') }}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus-circle me-1"></i> فتح شيفت جديد
+                    </a>
+                </div>
+
+                <div class="card-body overflow-x-auto">
+                    @if(session('success'))
+                        <div class="alert alert-success text-center">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    <table class="table table-hover table-striped text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>الموظف</th>
+                                <th>بداية الشيفت</th>
+                                <th>نهاية الشيفت</th>
+                                <th>خيارات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($shifts as $shift)
+                                <tr>
+                                    <td>{{ $shift->id }}</td>
+                                    <td>{{ $shift->user->name ?? '---' }}</td>
+                                    <td>
+                                        {{ \Carbon\Carbon::parse($shift->start_time)->timezone('Africa/Cairo')->format('Y-m-d H:i:s') }}
+                                    </td>
+                                    <td>
+                                        @if ($shift->end_time)
+                                            {{ \Carbon\Carbon::parse($shift->end_time)->timezone('Africa/Cairo')->format('Y-m-d H:i:s') }}
+                                        @else
+                                            <span class="badge bg-success">مفتوح</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if (!$shift->end_time)
+                                            <a href="{{ route('shifts.close', $shift->id) }}" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-lock me-1"></i> إغلاق
+                                            </a>
+                                        @endif
+                                        <a href="{{ route('shifts.report', $shift->id) }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-file-alt me-1"></i> تقرير
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center">لا يوجد شيفتات حالياً</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    <div class="d-flex justify-content-center mt-3">
+                        {{ $shifts->links() }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 @endsection
