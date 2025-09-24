@@ -26,6 +26,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Shift::class);
     }
+
+    // العلاقة مع العمليات (transactions)
+ 
     /**
      * The attributes that should be hidden for serialization.
      *

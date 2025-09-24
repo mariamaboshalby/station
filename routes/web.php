@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TankController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,7 +24,7 @@ Route::middleware('auth')->group(function () {
 });
 // ✅ كل الروتات اللي محتاجة لوجن
 Route::middleware('auth')->group(function () {
-
+    Route::resource('users', UserController::class);
     // Shifts
     Route::resource('shifts', ShiftController::class);
     Route::get('shifts/{shift}/close', [ShiftController::class, 'close'])->name('shifts.close');
@@ -34,6 +35,10 @@ Route::middleware('auth')->group(function () {
 
     // Tanks
     Route::resource('tanks', TankController::class);
+
+
+
+
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

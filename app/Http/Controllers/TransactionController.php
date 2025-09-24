@@ -12,7 +12,7 @@ class TransactionController extends Controller
     // عرض كل العمليات
     public function index()
     {
-        $transactions = Transaction::with(['shift.user', 'nozzle.tank.fuel'])->latest()->get();
+        $transactions = Transaction::with(['shift.user', 'nozzle.tank.fuel'])->latest()->paginate();
         return view('transactions.index', compact('transactions'));
     }
 
