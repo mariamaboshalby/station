@@ -13,10 +13,6 @@ class Nozzle extends Model
         return $this->belongsTo(Pump::class);
     }
 
-    public function transactions()
-    {
-        return $this->hasMany(Transaction::class);
-    }
 
     // إضافة علاقة للوصول للتانك مباشرة
     public function tank()

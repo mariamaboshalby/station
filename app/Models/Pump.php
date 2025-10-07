@@ -17,4 +17,11 @@ class Pump extends Model
     {
         return $this->hasMany(Nozzle::class);
     }
+
+public function transactions()
+{
+    return $this->hasMany(Transaction::class);
+}
+
+
 }
