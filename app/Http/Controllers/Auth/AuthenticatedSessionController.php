@@ -12,7 +12,7 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * عرض فورم تسجيل الدخول
      */
     public function create(): View
     {
@@ -20,26 +20,34 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * تنفيذ تسجيل الدخول
      */
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // ✅ التوجيه حسب الرول
+        if ($request->user()->hasRole('admin')) {
+            return redirect()->intended('/dashboard');
+        }
+
+        if ($request->user()->hasRole('user')) {
+            return redirect()->intended('/shifts/create');
+        }
+
+        // لو ملوش رول خالص
+        return redirect()->intended('/');
     }
 
     /**
-     * Destroy an authenticated session.
+     * تسجيل الخروج
      */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');

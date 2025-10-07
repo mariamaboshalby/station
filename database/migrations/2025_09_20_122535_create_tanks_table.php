@@ -14,8 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('fuel_id')->constrained()->cascadeOnDelete(); // كل تانك مرتبط بنوع وقود
             $table->string('name'); // اسم التانك (Tank A, Tank B)
-            $table->decimal('capacity', 20, 2); // سعة التانك القصوى
-            $table->decimal('current_level', 20, 2)->default(0); // الكمية الحالية في التانك
+            $table->decimal('capacity',  10, 2); // سعة التانك القصوى
+            $table->decimal('current_level', 10, 2)->default(0); // الكمية الحالية في التانك
             $table->timestamps();
         });
 

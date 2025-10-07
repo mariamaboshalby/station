@@ -8,22 +8,25 @@ return new class extends Migration {
     /**
      * Run the migrations.
      */
+
     public function up(): void
     {
-        Schema::create('nozzles', function (Blueprint $table) {
+        Schema::create('fuels', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pump_id')->constrained()->cascadeOnDelete(); // كل مسدس مرتبط بطلمبة
-            $table->string('name'); // اسم المسدس (Nozzle A, Nozzle B)
+           $table->string('name')->unique();
+            $table->decimal('price_per_liter', 8, 2); // سعر اللتر
             $table->timestamps();
         });
 
     }
+
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('nozzles');
+        Schema::dropIfExists('fuels');
     }
 };

@@ -8,25 +8,25 @@ return new class extends Migration {
     /**
      * Run the migrations.
      */
-
     public function up(): void
     {
-        Schema::create('fuels', function (Blueprint $table) {
+        Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // اسم نوع البنزين (80, 92, 95)
-            $table->decimal('price_per_liter', 8, 2); // سعر اللتر
+            $table->foreignId('pump_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->string('name');
+            $table->decimal('liters_drawn',10,2);
+            $table->decimal('total_price',10,2);
+            $table->decimal( 'amount_paid',10,2);
+            $table->decimal('rest',10,2);
             $table->timestamps();
         });
-
     }
-
-
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('fuels');
+        Schema::dropIfExists('clients');
     }
 };

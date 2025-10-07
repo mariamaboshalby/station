@@ -63,7 +63,6 @@
         .sidebar .nav-link.active {
             background: rgba(255, 255, 255, 0.15);
             color: #fff;
-            /* border-right: 3px solid #fff; */
             font-weight: 500;
         }
 
@@ -89,9 +88,7 @@
             width: 100%;
             margin-right: 0;
             padding-right: var(--sidebar-width);
-
         }
-
 
         @media (max-width: 991px) {
             .sidebar {
@@ -104,11 +101,9 @@
 
             .main-content {
                 padding-right: 0;
-               
             }
 
             .main-content.shifted {
-             
                 width: 100%;
             }
         }
@@ -126,9 +121,6 @@
             font-weight: 500;
         }
 
-        .main-navbar .navbar-nav .nav-link:hover {
-            color: ;
-        }
         .overlay {
             display: none;
             position: fixed;
@@ -144,122 +136,79 @@
             display: block;
         }
     </style>
+
 </head>
 
 <body>
     <div class="layout">
+        @canany(['add user', 'show users', 'open shift', 'show shifts', 'close shift', 'add transaction', 'show
+            transaction', 'add tank', 'edit tank', 'show tanks', 'view dashboard'])
+            <!-- Sidebar -->
+            <x-sidebar />
+            <!-- Overlay -->
+            <x-overlay />
+            <!-- Main Content -->
+            <div class="main-content" id="mainContent">
 
-        <!-- Sidebar -->
-        <div class="sidebar d-flex flex-column min-vh-100" id="sidebar">
-            <div class="brand">
-                <i class="fas fa-gas-pump"></i> محطة الوقود
+                <!-- Navbar -->
+                <x-navbar />
+
+                <!-- Content Area -->
+                <main class="p-4 flex-grow-1">
+                    <div class="container-fluid">
+                        @yield('content')
+                    </div>
+                </main>
             </div>
-            <nav class="nav flex-column mt-3">
-                <a href="{{ route('dashboard') }}"
-                    class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-tachometer-alt me-2"></i> لوحة التحكم
-                </a>
-                <a href="{{ route('transactions.index') }}"
-                    class="nav-link {{ request()->is('transactions*') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt me-2"></i> المعاملات
-                </a>
-                <a href="{{ route('shifts.index') }}" class="nav-link {{ request()->is('shifts*') ? 'active' : '' }}">
-                    <i class="fas fa-clock me-2"></i> الورديات
-                </a>
-                <a href="{{ route('tanks.index') }}" class="nav-link {{ request()->is('tanks*') ? 'active' : '' }}">
-                    <i class="fas fa-gas-pump me-2"></i> التانكات
-                </a>
-                <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('users*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-users"></i> الموظفين
-                </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-cogs me-2"></i> الإعدادات
-                </a>
-            </nav>
-        </div>
-
-        <!-- Overlay for mobile -->
-        <div class="overlay" id="overlay"></div>
-
-        <!-- Main Content -->
-        <div class="main-content" id="mainContent">
-
-            <!-- Navbar -->
-            <nav class="main-navbar navbar navbar-expand">
-                <div class="container-fluid">
-                    <!-- Mobile toggle button -->
-                    <button class="btn btn-outline-secondary d-lg-none me-2" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a href="{{ route('dashboard') }}" class="nav-link">
-                                <i class="fas fa-home me-1"></i> الرئيسية
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="btn btn-link nav-link">
-                                    <i class="fas fa-sign-out-alt me-1"></i> تسجيل الخروج
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-
-            <!-- Content Area -->
-            <main class="p-4 flex-grow-1">
-                <div class="container-fluid">
-                    @yield('content')
-                </div>
-            </main>
-        </div>
+        @endcanany
     </div>
 
-    <script>
-        const toggleBtn = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const overlay = document.getElementById('overlay');
+    {{-- نفس السكريبتات --}}
+</body>
 
-        // Toggle sidebar on mobile
-        toggleBtn.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            mainContent.classList.toggle('shifted');
-            overlay.classList.toggle('active');
-        });
 
-        // Close sidebar when clicking on overlay
-        overlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            mainContent.classList.remove('shifted');
-            overlay.classList.remove('active');
-        });
 
-        // Close sidebar when clicking on a link (mobile)
-        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth < 992) {
-                    sidebar.classList.remove('active');
-                    mainContent.classList.remove('shifted');
-                    overlay.classList.remove('active');
-                }
-            });
-        });
+<script>
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const overlay = document.getElementById('overlay');
 
-        // Close sidebar when window is resized to desktop size
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 992) {
+    // Toggle sidebar on mobile
+    toggleBtn?.addEventListener('click', function() {
+        sidebar.classList.toggle('active');
+        mainContent.classList.toggle('shifted');
+        overlay.classList.toggle('active');
+    });
+
+    // Close sidebar when clicking on overlay
+    overlay?.addEventListener('click', function() {
+        sidebar.classList.remove('active');
+        mainContent.classList.remove('shifted');
+        overlay.classList.remove('active');
+    });
+
+    // Close sidebar when clicking on a link (mobile)
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 992) {
                 sidebar.classList.remove('active');
                 mainContent.classList.remove('shifted');
                 overlay.classList.remove('active');
             }
         });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    });
+
+    // Close sidebar when window is resized to desktop size
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            sidebar.classList.remove('active');
+            mainContent.classList.remove('shifted');
+            overlay.classList.remove('active');
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 
