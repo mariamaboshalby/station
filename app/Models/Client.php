@@ -22,4 +22,13 @@ class Client extends Model
     {
         return $this->belongsTo(Pump::class);
     }
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+    public function refuelings()
+    {
+        return $this->hasMany(ClientRefueling::class);
+    }
+
 }

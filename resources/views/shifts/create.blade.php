@@ -31,7 +31,7 @@
                             <div class="mb-3">
                                 <label for="meter_reading" class="form-label">قراءة/استلام العداد</label>
                                 <input type="number" name="meter_reading" id="meter_reading" class="form-control"
-                                    placeholder="اكتب قراءة العداد" required>
+                                    value="{{ $totalLitersDrawn }}" readonly>
                             </div>
 
                             {{-- صورة العداد --}}
@@ -41,9 +41,25 @@
                                     required>
                             </div>
 
-                
                             {{-- نوع العملية مخفي --}}
                             <input type="hidden" name="operation_type" value="فتح شيفت">
+
+                            <div class="mb-3">
+                                <label class="form-label">حالة المطابقة</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="meter_match" id="match_yes"
+                                            value="1" required checked>
+                                        <label class="form-check-label" for="match_yes">مطابق</label>
+                                    </div>
+
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="meter_match" id="match_no"
+                                            value="0">
+                                        <label class="form-check-label" for="match_no">غير مطابق</label>
+                                    </div>
+                                </div>
+                            </div>
 
                             {{-- زرار الحفظ --}}
                             <div class="d-flex justify-content-center mt-4">

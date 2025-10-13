@@ -1,25 +1,35 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TankController;
 use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Route;
 
-// الصفحة الرئيسية -> توجيه حسب المستخدم
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// الصفحة الرئيسية -> توجيه حسب نوع المستخدم
 Route::get('/', function () {
     if (auth()->check()) {
-        if (auth()->user()->email === 'admin@admin.com') {
-            return redirect()->route('dashboard'); // الأدمن يروح للداشبورد
+        if (auth()->user()->phone === '01111111111') {
+            // الأدمن
+            return redirect()->route('dashboard');
+        } else {
+            // اليوزر العادي
+            return redirect()->route('home.buttons');
         }
-        return redirect()->route('home.buttons'); // اليوزر العادي يروح لصفحة الأزرار
     }
+    // المستخدم غير مسجل الدخول
     return redirect()->route('login');
 });
 
-// لوحة التحكم (للأدمن)
+// ✅ لوحة التحكم (للأدمن فقط)
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -27,6 +37,7 @@ Route::get('/dashboard', function () {
 // ✅ صفحة الأزرار (لليوزر العادي بعد تسجيل الدخول)
 Route::get('/home-buttons', function () {
     $user = auth()->user();
+
     $openShift = \App\Models\Shift::where('user_id', $user->id)
         ->whereNull('end_time')
         ->first();
@@ -34,41 +45,35 @@ Route::get('/home-buttons', function () {
     return view('home-buttons', compact('openShift'));
 })->middleware('auth')->name('home.buttons');
 
-// بروفايل
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+// ✅ كل الروتات اللي محتاجة تسجيل دخول
+Route::middleware(['auth'])->group(function () {
 
-// ✅ كل الروتات اللي محتاجة لوجن
-Route::middleware('auth')->group(function () {
-    // Users
+    /** 🧍‍♂️ المستخدمين */
     Route::resource('users', UserController::class);
 
-    // Shifts
+    /** ⛽ الشيفتات */
     Route::resource('shifts', ShiftController::class);
     Route::get('/shifts/{id}/close', [ShiftController::class, 'close'])->name('shifts.closeForm');
     Route::patch('/shifts/{id}/close', [ShiftController::class, 'closeStore'])->name('shifts.close');
+    Route::get('/shifts/{shift}/report', [ShiftController::class, 'report'])->name('shifts.report');
+    Route::get('/users/{id}/shifts', [ShiftController::class, 'userShifts'])->name('users.shifts');
 
-    Route::get('shifts/{shift}/report', [ShiftController::class, 'report'])->name('shifts.report');
-
-    // عرض شيفتات موظف معين (باستخدام id)
-    Route::get('/users/{id}/shifts', [ShiftController::class, 'userShifts'])
-        ->name('users.shifts');
-
-    // Transactions
-    Route::resource('transactions', TransactionController::class);
-
-    // Tanks
+    /** 🛢️ التانكات */
     Route::resource('tanks', TankController::class);
-    // صفحة إدخال الكمية
     Route::get('/tanks/{id}/add-capacity', [TankController::class, 'addCapacityForm'])->name('tanks.addCapacityForm');
-    // تنفيذ العملية
     Route::post('/tanks/{id}/add-capacity', [TankController::class, 'addCapacity'])->name('tanks.addCapacity');
 
-    // Clients
+    /** 💰 العمليات (Transactions) */
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
+    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    // ✅ لاحظ: غيرت '/transactions/store' إلى '/transactions' لأن RESTful routes تستخدم نفس الـ resource base
+
+    /** 👥 العملاء */
     Route::resource('clients', ClientController::class);
+    Route::get('/clients/{id}/transactions', [ClientController::class, 'transactions'])->name('clients.transactions');
+    Route::get('/clients/{id}/add-payment', [ClientController::class, 'addPaymentForm'])->name('clients.addPaymentForm');
+    Route::post('/clients/{id}/add-payment', [ClientController::class, 'addPayment'])->name('clients.addPayment');
 });
 
 require __DIR__ . '/auth.php';

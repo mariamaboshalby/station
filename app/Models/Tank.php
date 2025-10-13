@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tank extends Model
 {
-    protected $fillable = ['fuel_id', 'name', 'capacity', 'current_level'];
+    protected $fillable = ['fuel_id', 'name', 'capacity', 'current_level','liters_drawn'];
 
     public function fuel()
     {

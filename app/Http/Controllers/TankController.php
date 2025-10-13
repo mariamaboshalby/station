@@ -11,10 +11,10 @@ use Illuminate\Http\Request;
 class TankController extends Controller
 {
     public function index()
-{
-    $tanks = Tank::all();
-    return view('tanks.index', compact('tanks'));
-}
+    {
+        $tanks = Tank::all();
+        return view('tanks.index', compact('tanks'));
+    }
 
     public function create()
     {
@@ -56,7 +56,7 @@ class TankController extends Controller
 
         return redirect()->route('tanks.index')->with('success', 'Tank, pumps, and nozzles created successfully!');
     }
-        public function edit($id)
+    public function edit($id)
     {
         $tank = Tank::findOrFail($id);
         return view('tanks.edit', compact('tank'));
@@ -75,28 +75,27 @@ class TankController extends Controller
         return redirect()->route('tanks.index', $id)->with('success', 'تم تحديث سعة التانك بنجاح ✅');
     }
     public function addCapacityForm($id)
-{
-    $tank = Tank::findOrFail($id);
-    return view('tanks.add-capacity', compact('tank'));
-}
-
-public function addCapacity(Request $request, $id)
-{
-    $request->validate([
-        'amount' => 'required|numeric|min:1',
-    ]);
-
-    $tank = Tank::findOrFail($id);
-
-    if ($tank->current_level + $request->amount > $tank->capacity) {
-        return redirect()->back()->with('error', '⚠️ الكمية أكبر من السعة الكلية للتانك.');
+    {
+        $tank = Tank::findOrFail($id);
+        return view('tanks.add-capacity', compact('tank'));
     }
+    public function addCapacity(Request $request, $id)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+        ]);
 
-    $tank->current_level += $request->amount;
-    $tank->save();
+        $tank = Tank::findOrFail($id);
 
-    return redirect()->route('tanks.index')->with('success', '✅ تم إضافة الكمية للتانك بنجاح.');
-}
+        if ($tank->current_level + $request->amount > $tank->capacity) {
+            return redirect()->back()->with('error', '⚠️ الكمية أكبر من السعة الكلية للتانك.');
+        }
+
+        $tank->current_level += $request->amount;
+        $tank->save();
+
+        return redirect()->route('tanks.index')->with('success', '✅ تم إضافة الكمية للتانك بنجاح.');
+    }
 
 
 }
