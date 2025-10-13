@@ -21,7 +21,7 @@ class TransactionController extends Controller
 
         // حساب إجمالي السعر لكل عملية
         $transactions->transform(function ($t) {
-            $t->total_amount = $t->credit_liters * $t->pump->tank->fuel->price_per_liter;
+            $t->total_amount =( $t->credit_liters+$t->cash_liters) * $t->pump->tank->fuel->price_per_liter;
             return $t;
         });
 
@@ -82,7 +82,7 @@ class TransactionController extends Controller
 
         // 🔹 رفع الصورة
         $imagePath = $request->file('image')->store('transactions', 'public');
-
+        
         // 🔹 حفظ العملية في جدول transactions
         $transaction = Transaction::create([
             'shift_id' => $validated['shift_id'],

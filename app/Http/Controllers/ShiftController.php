@@ -80,7 +80,11 @@ class ShiftController extends Controller
     public function close($id)
     {
         $shift = Shift::findOrFail($id);
-        return view('shifts.close', compact('shift'));
+        $totalCreditLiters = $shift->transactions()
+        ->sum('credit_liters');
+
+        return view('shifts.close', compact('shift', 'totalCreditLiters'));
+
     }
 
     // حفظ إغلاق الشيفت
@@ -123,7 +127,7 @@ class ShiftController extends Controller
             'total_amount' => $totalAmount,
             'image' => $imagePath,
         ]);
-        
+
         // 🛢️ تحديث بيانات التانك
         if ($pump && $pump->tank) {
             $tank = $pump->tank;

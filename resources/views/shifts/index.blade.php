@@ -23,8 +23,11 @@
                                 <tr>
                                     <th>#</th>
                                     <th>الموظف</th>
+                                    <th>العداد في بدايه الشيفت</th>
+                                    <th>صوره العداد في نهايه الشيفت</th>
                                     <th>بداية الشيفت</th>
                                     <th>نهاية الشيفت</th>
+                                    <th>مطابق</th>
                                     <th>خيارات</th>
                                 </tr>
                             </thead>
@@ -33,13 +36,29 @@
                                     <tr>
                                         <td>{{ $shift->id }}</td>
                                         <td>{{ $shift->user->name ?? '---' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($shift->start_time)->timezone('Africa/Cairo')->format('Y-m-d H:i:s') }}
-                                        </td>
+                                        <td>{{ $shift->meter_reading?? '---' }}</td>
+                                            <td>
+                                                @if ($shift->meter_image)
+                                                    <img src="{{ asset('storage/' . $shift->meter_image) }}" alt="صورة العملية"
+                                                        width="100" height="100" class="rounded shadow-sm">
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                        <td>{{ $shift->start_time }}</td>
                                         <td>
                                             @if ($shift->end_time)
-                                                {{ \Carbon\Carbon::parse($shift->end_time)->timezone('Africa/Cairo')->format('Y-m-d H:i:s') }}
+
+                                                {{$shift->end_time }}
                                             @else
                                                 <span class="badge bg-success">مفتوح</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($shift->meter_match==1)
+                                               <span class="badge bg-success">مطابق</span>
+                                            @else
+                                                <span class="badge bg-danger">غير مطابق</span>
                                             @endif
                                         </td>
                                         <td>
@@ -67,7 +86,7 @@
                         </table>
                     </div>
                 </div>
-                
+
             </div>
         </div>
     @endsection

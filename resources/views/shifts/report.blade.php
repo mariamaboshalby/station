@@ -49,6 +49,7 @@
                                                 @endif
                                             </td>
                                             <td>{{ $shift->start_time}}</td>
+                                            
                                             <td>{{ $shift->end_time}}</td>
                                        
                                         </tr>
