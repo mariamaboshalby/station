@@ -80,7 +80,7 @@
             }
         </style>
 
-        <div class="container-fluid">
+        <div class="">
             <div class="row g-4 text-center">
 
                 <!-- عدد التانكات -->

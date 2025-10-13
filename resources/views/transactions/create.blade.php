@@ -7,9 +7,12 @@
                 <div class="col-md-8">
 
                     <div class="card">
-                        <div class="card-header bg-success text-white fw-bold">
+                        <div class="card-header bg-success text-white fw-bold ">
                             إضافة عملية جديدة
                         </div>
+                        <a href="{{ route('shifts.closeForm', $shift->id) }}" class="col-md-3 col-12 ms-auto btn btn-danger m-1">
+                            <i class="fas fa-lock me-2"></i> إغلاق شيفت
+                        </a>
 
                         <div class="card-body">
 
@@ -86,13 +89,6 @@
                                         class="form-control text-center" required>
                                 </div>
 
-                                {{-- قراءة العداد --}}
-                                <div class="mb-3">
-                                    <label for="tank_level_after" class="form-label fw-bold">قراءة العداد بعد العملية</label>
-                                    <input type="number" step="0.01" name="tank_level_after" id="tank_level_after"
-                                        class="form-control text-center" required>
-                                </div>
-
                                 {{-- صورة العداد --}}
                                 <div class="mb-3">
                                     <label for="image" class="form-label fw-bold">صورة العداد</label>
@@ -119,19 +115,5 @@
                 </div>
             </div>
         </div>
-
-        {{-- سكريبت لإظهار العملاء عند اختيار "بيع آجل" --}}
-        @push('scripts')
-            <script>
-                document.getElementById('operation_type').addEventListener('change', function() {
-                    let clientField = document.getElementById('client_field');
-                    if (this.value === 'credit') {
-                        clientField.style.display = 'block';
-                    } else {
-                        clientField.style.display = 'none';
-                    }
-                });
-            </script>
-        @endpush
     @endsection
 @endcan

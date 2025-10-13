@@ -18,13 +18,14 @@
 
                         <x-alert-success />
 
-                        <table class="table table-hover table-striped text-center">
+                        <table class="table table-hover table-striped text-center " >
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
                                     <th>الاسم</th>
                                     <th>السعة</th>
                                     <th>اللترات المخزنة</th>
+                                    <th>اللترات المسحوبه</th>
                                     @can('edit tank')
                                         <th>إجراءات</th>
                                     @endcan
@@ -37,6 +38,7 @@
                                         <td>تانك : {{ $tank->name }} - {{ $tank->fuel->name }}</td>
                                         <td>{{ $tank->capacity }}</td>
                                         <td>{{ $tank->current_level }}</td>
+                                        <td>{{ $tank->liters_drawn ??0}}</td>
                                         @can('edit tank')
                                             <td>
                                                 <x-button type="link" color="primary" size="sm" icon="edit"
@@ -49,7 +51,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center">لا يوجد تانكات حالياً</td>
+                                        <td colspan="6" class="text-center">لا يوجد تانكات حالياً</td>
                                     </tr>
                                 @endforelse
                             </tbody>

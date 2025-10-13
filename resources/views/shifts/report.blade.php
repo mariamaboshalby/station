@@ -2,8 +2,8 @@
     @extends('layouts.app')
 
     @section('content')
-        <div class="container" dir="rtl">
-            <div class="row justify-content-center">
+
+            <div class="row justify-content-center" dir="rtl">
                 <div class="col-12">
 
                     <x-card :title="'تقرير الشيفت - ' . $shift->user->name" :subtitle="'من: ' .
@@ -23,7 +23,9 @@
                                         <th>النوع</th>
                                         <th>التانك</th>
                                         <th>طلمبه</th>
-                                        <th>الكمية (لتر)</th>
+                                        <th>لترات اجل</th>
+                                        <th>لترات كاش</th>
+                                        <th>صوره</th>
                                         <th>بدايه الشيفت</th>
                                         <th>نهايه الشيفت</th>
                                         
@@ -36,7 +38,16 @@
                                             <td>{{ $transaction->pump->tank->fuel->name }}</td>
                                             <td>{{ $transaction->pump->tank->name }}</td>
                                             <td>{{ $transaction->pump->name }}</td>
-                                            <td class="fw-bold">{{ number_format($transaction->liters_dispensed, 2) }}</td>
+                                             <td>{{ $transaction->credit_liters }}</td>
+                                            <td>{{ $transaction->cash_liters }}</td>
+                                            <td>
+                                                @if ($transaction->image)
+                                                    <img src="{{ asset('storage/' . $transaction->image) }}" alt="صورة العملية"
+                                                        width="150" height="100" class="rounded shadow-sm">
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                             <td>{{ $shift->start_time}}</td>
                                             <td>{{ $shift->end_time}}</td>
                                        
@@ -50,6 +61,6 @@
 
                 </div>
             </div>
-        </div>
+        
     @endsection
 @endcan

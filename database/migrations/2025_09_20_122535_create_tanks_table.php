@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('name'); // اسم التانك (Tank A, Tank B)
             $table->decimal('capacity',  10, 2); // سعة التانك القصوى
             $table->decimal('current_level', 10, 2)->default(0); // الكمية الحالية في التانك
+            $table->decimal('liters_drawn',10,2)->default(0);
             $table->timestamps();
         });
 

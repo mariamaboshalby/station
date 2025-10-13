@@ -1,14 +1,12 @@
 @can('show users')
-@extends('layouts.app')
-@section('content')
-    <div class="container" dir="rtl">
+    @extends('layouts.app')
+    @section('content')
         <div class="row justify-content-center">
             <div class="col-12">
 
                 <div class="card shadow-lg border-0 rounded-3">
                     @can('add user')
-                        <div
-                            class="card-header bg-light text-center fs-5 fw-bold d-flex justify-content-between align-items-center">
+                        <div class="card-header bg-light text-center fs-5 fw-bold d-flex justify-content-between align-items-center">
                             <span>قائمة المستخدمين</span>
                             <a href="{{ route('users.create') }}" class="btn btn-sm btn-success">
                                 <i class="fas fa-user-plus me-1"></i> إضافة موظف جديد
@@ -35,7 +33,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>الاسم</th>
-                                    <th>البريد الإلكتروني</th>
+                                    <th>رقم التليفون</th>
                                     <th>تاريخ الإضافة</th>
                                     <th>اختيارات</th>
                                 </tr>
@@ -59,16 +57,11 @@
                                     </tr>
                                 @endforelse
                             </tbody>
-                        </table>
-
-                        <div class="d-flex justify-content-center mt-3">
-                            {{ $users->links() }}
-                        </div>
+                        </table>              
                     </div>
                 </div>
 
             </div>
         </div>
-    </div>
-@endsection
+    @endsection
 @endcan
