@@ -39,7 +39,7 @@
                                 @forelse($transactions as $transaction)
                                     <tr>
                                         <td>{{ $transaction->shift->user->name ?? '-' }}</td>
-                                        <td>{{ $transaction->pump->name ?? '-' }}</td>
+                                        <td>{{ $transaction->pump->name ?? '-' }}-تانك {{ $transaction->pump->tank->name ?? '-' }} - {{ $transaction->pump->tank->fuel->name ?? '-' }}</td>
                                         <td>{{ $transaction->client->name ?? '-' }}</td>
                                         <td>{{ $transaction->credit_liters }}</td>
                                         <td>{{ $transaction->cash_liters }}</td>

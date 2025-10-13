@@ -24,6 +24,12 @@
                                 <label class="form-label">قراءة العداد عند بداية الشيفت</label>
                                 <input type="number" class="form-control" value="{{ $shift->meter_reading }}" readonly>
                             </div>
+                            {{-- إجمالي اللترات الآجل في هذا الشيفت --}}
+                            <div class="mb-3">
+                                <label class="form-label">إجمالي اللترات الآجل في هذا الشيفت</label>
+                                <input type="text" class="form-control" value="{{ $totalCreditLiters }} لتر" readonly>
+                            </div>
+
                             {{-- قراءة العداد عند نهاية الشيفت --}}
                             <div class="mb-3">
                                 <label for="end_meter_reading" class="form-label">قراءة العداد عند نهاية الشيفت</label>
