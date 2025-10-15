@@ -9,10 +9,10 @@
 
                 <div class="d-flex justify-content-between mb-3">
                     <span></span>
-                    {{-- @can('add client') --}}
+                    @can('add client')
                     <x-button type="link" color="success" size="sm" icon="plus-circle" label="إضافة عميل جديد"
                         :href="route('clients.create')" />
-                    {{-- @endcan --}}
+                    @endcan
                 </div>
 
                 <x-alert-success />

@@ -86,27 +86,45 @@ class ClientController extends Controller
 
         return view('clients.transactions', compact('client', 'transactions', 'totalLiters', 'totalAmount'));
     }
-        public function addPaymentForm($id)
+    public function addPaymentForm($id)
     {
         $client = Client::findOrFail($id);
         return view('clients.add-payment', compact('client'));
     }
 
-public function addPayment(Request $request, $id)
+    public function addPayment(Request $request, $id)
+    {
+        $client = Client::findOrFail($id);
+
+        $request->validate([
+            'added_amount' => 'required|numeric|min:0.01',
+        ]);
+        // تحديث المبلغ المدفوع
+        $client->amount_paid += $request->added_amount;
+        // إعادة حساب الباقي
+        $client->rest = $client->amount_paid - $client->total_price;
+        $client->save();
+
+        return redirect()->route('clients.index')->with('success', 'تمت إضافة المبلغ بنجاح.');
+    }
+public function search(Request $request)
 {
-    $client = Client::findOrFail($id);
+    $term = $request->get('term');
 
-    $request->validate([
-        'added_amount' => 'required|numeric|min:0.01',
-    ]);
-    // تحديث المبلغ المدفوع
-    $client->amount_paid += $request->added_amount;
-    // إعادة حساب الباقي
-    $client->rest = $client->amount_paid - $client->total_price;
-    $client->save();
+    $clients = Client::query()
+        ->where('name', 'LIKE', "%{$term}%")
+        ->take(10)
+        ->get(['id', 'name']);
 
-    return redirect()->route('clients.index')->with('success', 'تمت إضافة المبلغ بنجاح.');
+    return response()->json($clients);
 }
 
+
+
+    public function show($id)
+    {
+        $client = Client::findOrFail($id);
+        return response()->json($client);
+    }
 
 }
