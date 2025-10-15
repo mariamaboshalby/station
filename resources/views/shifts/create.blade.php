@@ -34,13 +34,15 @@
                                     value="{{ $totalLitersDrawn }}" readonly>
                             </div>
 
-                            {{-- صورة العداد --}}
                             <div class="mb-3">
                                 <label for="meter_image" class="form-label">صورة العداد</label>
                                 <input type="file" name="meter_image" id="meter_image" class="form-control" accept="image/*"
-                                    required>
+                                    required onchange="previewImage(event)">
+                                <div class="mt-2 text-center">
+                                    <img id="image_preview" src="#" alt="معاينة الصورة"
+                                        style="display:none; max-width:200px;" class="rounded shadow-sm border border-light">
+                                </div>
                             </div>
-
                             {{-- نوع العملية مخفي --}}
                             <input type="hidden" name="operation_type" value="فتح شيفت">
 
@@ -72,5 +74,16 @@
                 </div>
             </div>
         </div>
+        <script>
+            function previewImage(event) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const output = document.getElementById('image_preview');
+                    output.src = reader.result;
+                    output.style.display = 'block';
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        </script>
     @endsection
 @endcan

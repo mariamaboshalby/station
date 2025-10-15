@@ -8,31 +8,30 @@ use App\Models\Pump;
 use App\Models\Client;
 use App\Models\ClientRefueling;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
+    // عرض كل العمليات
     public function index()
     {
-        // جلب كل العمليات مع العلاقات المطلوبة
-        $transactions = Transaction::with(['shift.user', 'pump.tank.fuel', 'client'])
+        $transactions = Transaction::with(['shift.user', 'pump.tank.fuel', 'client', 'media'])
             ->latest()
-            ->get(); // ✅ كده رجع Collection
+            ->get();
 
-        // حساب إجمالي السعر لكل عملية
+        // حساب المبلغ الإجمالي
         $transactions->transform(function ($t) {
-            $t->total_amount =( $t->credit_liters+$t->cash_liters) * $t->pump->tank->fuel->price_per_liter;
+            $price = $t->pump->tank->fuel->price_per_liter ?? 0;
+            $t->total_amount = ($t->credit_liters + $t->cash_liters) * $price;
             return $t;
         });
 
         return view('transactions.index', compact('transactions'));
     }
 
-
-
+    // نموذج إنشاء عملية جديدة
     public function create()
     {
-        // 🔹 جلب الطلمبات حسب صلاحيات المستخدم
+        // 🔹 الطلمبات
         if (auth()->user()->hasRole('admin')) {
             $pumps = Pump::with('tank.fuel')->get();
         } else {
@@ -45,7 +44,7 @@ class TransactionController extends Controller
                 ->get();
         }
 
-        // 🔹 جلب الشيفتات
+        // 🔹 الشيفتات
         if (auth()->user()->hasRole('admin')) {
             $shifts = Shift::with('user')->latest()->get();
         } else {
@@ -56,7 +55,7 @@ class TransactionController extends Controller
                 ->get();
         }
 
-        // 🔹 جلب العملاء
+        // 🔹 العملاء
         $clients = Client::all();
 
         // 🔹 تحديد الشيفت الحالي
@@ -65,43 +64,49 @@ class TransactionController extends Controller
         return view('transactions.create', compact('clients', 'pumps', 'shift', 'shifts'));
     }
 
+    // حفظ العملية
     public function store(Request $request)
     {
         $validated = $request->validate([
             'shift_id' => 'required|exists:shifts,id',
             'pump_id' => 'required|exists:pumps,id',
             'credit_liters' => 'required|numeric|min:0.01',
-            'image' => 'required|image',
-            'notes' => 'nullable|string',
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:4096',
+            'notes' => 'nullable|string|max:500',
             'client_id' => 'nullable|exists:clients,id',
         ]);
 
         // 🔹 جلب الطلمبة وسعر اللتر
         $pump = Pump::with('tank.fuel')->findOrFail($validated['pump_id']);
-        $fuelPrice = $pump->tank->fuel->price_per_liter;
+        $fuelPrice = $pump->tank->fuel->price_per_liter ?? 0;
 
-        // 🔹 رفع الصورة
-        $imagePath = $request->file('image')->store('transactions', 'public');
-        
-        // 🔹 حفظ العملية في جدول transactions
+        // 🔹 حساب المجموع الكلي
+        $totalAmount = $validated['credit_liters'] * $fuelPrice;
+
+        // 🔹 إنشاء العملية أولًا
         $transaction = Transaction::create([
             'shift_id' => $validated['shift_id'],
             'pump_id' => $validated['pump_id'],
             'client_id' => $validated['client_id'] ?? null,
             'credit_liters' => $validated['credit_liters'],
-            'image' => $imagePath,
             'notes' => $validated['notes'] ?? null,
             'operation_type' => 'آجل',
+            'total_amount' => $totalAmount,
         ]);
+
+        // 🔹 حفظ الصورة باستخدام Spatie
+        if ($request->hasFile('image')) {
+            $transaction
+                ->addMediaFromRequest('image')
+                ->toMediaCollection('transactions');
+        }
 
         // 🔹 لو العملية تخص عميل آجل
         if (!empty($validated['client_id'])) {
             $client = Client::findOrFail($validated['client_id']);
-            $totalAmount = $validated['credit_liters'] * $fuelPrice;
 
-            // حفظ سجل التفويلة
             ClientRefueling::create([
-                'client_id' => $validated['client_id'],
+                'client_id' => $client->id,
                 'shift_id' => $validated['shift_id'],
                 'transaction_id' => $transaction->id,
                 'liters' => $validated['credit_liters'],
@@ -109,24 +114,22 @@ class TransactionController extends Controller
                 'total_amount' => $totalAmount,
             ]);
 
-            // تحديث العميل في جدول clients
             $client->update([
                 'liters_drawn' => $client->liters_drawn + $validated['credit_liters'],
                 'total_price' => $client->total_price + $totalAmount,
                 'rest' => $client->amount_paid - ($client->total_price + $totalAmount),
             ]);
         }
-        return redirect()->route('transactions.create')->with('success', 'تم حفظ العملية وتحديث التانك بنجاح ✅');
 
-
+        return redirect()->route('transactions.create')
+            ->with('success', 'تم حفظ العملية والصورة بنجاح ✅');
     }
 
-
+    // حذف العملية
     public function destroy(Transaction $transaction)
     {
-        if ($transaction->image && Storage::disk('public')->exists($transaction->image)) {
-            Storage::disk('public')->delete($transaction->image);
-        }
+        // حذف الصور تلقائيًا من Spatie
+        $transaction->clearMediaCollection('transactions');
 
         $transaction->delete();
 

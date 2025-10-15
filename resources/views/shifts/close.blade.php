@@ -36,12 +36,15 @@
                                 <input type="number" name="end_meter_reading" id="end_meter_reading" class="form-control"
                                     placeholder="اكتب القراءة النهائية" required>
                             </div>
-
-                            {{-- صورة العداد --}}
+                            
                             <div class="mb-3">
                                 <label for="end_meter_image" class="form-label">صورة العداد عند الإغلاق</label>
                                 <input type="file" name="end_meter_image" id="end_meter_image" class="form-control"
-                                    accept="image/*" required>
+                                    accept="image/*" required onchange="previewEndImage(event)">
+                                <div class="mt-2 text-center">
+                                    <img id="end_image_preview" src="#" alt="معاينة الصورة"
+                                        style="display:none; max-width:200px;" class="rounded shadow-sm border border-light">
+                                </div>
                             </div>
 
                             {{-- ملاحظات --}}
@@ -61,5 +64,16 @@
                 </div>
             </div>
         </div>
+        <script>
+            function previewEndImage(event) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const output = document.getElementById('end_image_preview');
+                    output.src = reader.result;
+                    output.style.display = 'block';
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        </script>
     @endsection
 @endcan

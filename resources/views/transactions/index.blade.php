@@ -39,16 +39,20 @@
                                 @forelse($transactions as $transaction)
                                     <tr>
                                         <td>{{ $transaction->shift->user->name ?? '-' }}</td>
-                                        <td>{{ $transaction->pump->name ?? '-' }}-تانك {{ $transaction->pump->tank->name ?? '-' }} - {{ $transaction->pump->tank->fuel->name ?? '-' }}</td>
+                                        <td>{{ $transaction->pump->name ?? '-' }}-تانك
+                                            {{ $transaction->pump->tank->name ?? '-' }} -
+                                            {{ $transaction->pump->tank->fuel->name ?? '-' }}</td>
                                         <td>{{ $transaction->client->name ?? '-' }}</td>
                                         <td>{{ $transaction->credit_liters }}</td>
                                         <td>{{ $transaction->cash_liters }}</td>
                                         <td>{{ number_format($transaction->total_amount, 2) }}</td>
-
                                         <td>
-                                            @if ($transaction->image)
-                                                <img src="{{ asset('storage/' . $transaction->image) }}" alt="صورة العملية"
-                                                    width="100" height="100" class="rounded shadow-sm">
+                                            @if ($transaction->hasMedia('transactions'))
+                                                <a href="{{ $transaction->getFirstMediaUrl('transactions') }}" target="_blank">
+                                                    <img src="{{ $transaction->getFirstMediaUrl('transactions', 'thumb') }}"
+                                                        alt="صورة العملية" width="100" height="80"
+                                                        style="object-fit: cover;">
+                                                </a>
                                             @else
                                                 -
                                             @endif
@@ -66,7 +70,7 @@
 
 
                     </div>
-                    
+
                 </div>
             </div>
         </div>
