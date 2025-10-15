@@ -16,6 +16,8 @@
 
     <!-- Google Fonts - Tajawal -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<!-- CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 
     <style>
         :root {
@@ -141,8 +143,20 @@
 
 <body>
     <div class="layout">
-        @canany(['add user', 'show users', 'open shift', 'show shifts', 'close shift', 'add transaction', 'show
-            transaction', 'add tank', 'edit tank', 'show tanks', 'view dashboard'])
+        @canany([
+            'add user',
+            'show users',
+            'open shift',
+            'show shifts',
+            'close shift',
+            'add transaction',
+            'show
+            transaction',
+            'add tank',
+            'edit tank',
+            'show tanks',
+            'view dashboard',
+            ])
             <!-- Sidebar -->
             <x-sidebar />
             <!-- Overlay -->
@@ -165,9 +179,6 @@
 
     {{-- نفس السكريبتات --}}
 </body>
-
-
-
 <script>
     const toggleBtn = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
@@ -208,8 +219,12 @@
         }
     });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Laravel stack -->
+@stack('script')
 </body>
 
 </html>

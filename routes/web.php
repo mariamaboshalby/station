@@ -70,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
     // ✅ لاحظ: غيرت '/transactions/store' إلى '/transactions' لأن RESTful routes تستخدم نفس الـ resource base
 
     /** 👥 العملاء */
+    Route::get('/clients/search', [ClientController::class, 'search'])->name('clients.search');
     Route::resource('clients', ClientController::class);
     Route::get('/clients/{id}/transactions', [ClientController::class, 'transactions'])->name('clients.transactions');
     Route::get('/clients/{id}/add-payment', [ClientController::class, 'addPaymentForm'])->name('clients.addPaymentForm');
