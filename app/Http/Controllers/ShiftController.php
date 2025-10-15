@@ -60,17 +60,17 @@ class ShiftController extends Controller
             $userId = auth()->id();
         }
 
-        // 🟢 رفع صورة العداد
-        $imagePath = $request->file('meter_image')->store('meter_images', 'public');
-
-        // 🟢 حفظ الشيفت الجديد
+        // 🟢 حفظ الشيفت الجديد أولاً
         $shift = Shift::create([
             'user_id' => $userId,
             'meter_reading' => $request->meter_reading,
-            'meter_image' => $imagePath,
             'meter_match' => $request->meter_match,
             'start_time' => now(),
         ]);
+
+        // 🟢 رفع صورة العداد باستخدام Spatie
+        $shift->addMediaFromRequest('meter_image')
+            ->toMediaCollection('start_meter_images');
 
         return redirect()->route('transactions.create', ['shift_id' => $shift->id])
             ->with('success', 'تم فتح الشيفت بنجاح، يمكنك إضافة العمليات الآن ✅');
@@ -81,86 +81,96 @@ class ShiftController extends Controller
     {
         $shift = Shift::findOrFail($id);
         $totalCreditLiters = $shift->transactions()
-        ->sum('credit_liters');
+            ->sum('credit_liters');
 
         return view('shifts.close', compact('shift', 'totalCreditLiters'));
-
     }
-
-    // حفظ إغلاق الشيفت
     public function closeStore(Request $request, $id)
     {
         $shift = Shift::with('transactions')->findOrFail($id);
-
-        $request->validate([
+        $validated = $request->validate([
             'end_meter_reading' => 'required|numeric|min:0',
-            'end_meter_image' => 'required|image',
+            'end_meter_image' => 'required|image|mimes:jpeg,png,jpg|max:4096',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $imagePath = $request->file('end_meter_image')->store('meter_images', 'public');
-
-        // ✅ حساب إجمالي اللترات الآجلة من العمليات
+        // ✅ إجمالي اللترات الآجلة
         $totalCreditLiters = $shift->transactions->sum('credit_liters');
 
-        // ✅ حساب الكاش ليتر من قراءة العداد
-        $cashLiters = $request->end_meter_reading - ($shift->meter_reading + $totalCreditLiters);
+        // ✅ اللترات الكاش
+        $cashLiters = $validated['end_meter_reading'] - ($shift->meter_reading + $totalCreditLiters);
 
-        // ✅ جلب أول طلمبة يملكها المستخدم
-        $userPumpIds = auth()->user()->getPermissionNames()
+        // ✅ تحديد المستخدم والطلمبة
+        $user = $shift->user;
+        $userPumpIds = $user->getPermissionNames()
             ->filter(fn($perm) => str_starts_with($perm, 'use_pump_'))
             ->map(fn($perm) => (int) str_replace('use_pump_', '', $perm));
 
-        $pump = Pump::with('tank.fuel')
-            ->whereIn('id', $userPumpIds)
-            ->first();
+        $pump = Pump::with('tank.fuel')->whereIn('id', $userPumpIds)->first();
 
-        $fuelPrice = $pump?->tank?->fuel?->price_per_liter ?? 0;
+        if (!$pump) {
+            return back()->with('error', '⚠️ لا يمكن تحديد الطلمبة من صلاحيات المستخدم.');
+        }
+
+        // ✅ السعر الإجمالي
+        $fuelPrice = $pump->tank->fuel->price_per_liter ?? 0;
         $totalAmount = ($cashLiters + $totalCreditLiters) * $fuelPrice;
 
-        // ✅ إنشاء عملية جديدة
-        Transaction::create([
+        // ✅ إنشاء العملية
+        $transaction = Transaction::create([
             'shift_id' => $shift->id,
             'pump_id' => $pump->id,
             'cash_liters' => $cashLiters,
             'credit_liters' => $totalCreditLiters,
             'total_amount' => $totalAmount,
-            'image' => $imagePath,
+            'operation_type' => 'إغلاق شيفت',
+            'notes' => $validated['notes'] ?? null,
         ]);
 
-        // 🛢️ تحديث بيانات التانك
+        // ✅ حفظ الصورة بنفس أسلوب TransactionController
+        if ($request->hasFile('end_meter_image')) {
+            // أولاً حفظ الصورة في الـ transaction
+            $media = $transaction
+                ->addMediaFromRequest('end_meter_image')
+                ->toMediaCollection('transactions');
+
+            // ثانياً نسخ نفس الصورة لمجموعة الشيفت
+            $shift
+                ->addMedia($media->getPath())
+                ->preservingOriginal()
+                ->toMediaCollection('end_meter_images');
+        }
+
+        // ✅ تحديث بيانات التانك
         if ($pump && $pump->tank) {
             $tank = $pump->tank;
             $litersUsed = $cashLiters + $totalCreditLiters;
-
-            // زيادة اللترات المسحوبة
             $tank->liters_drawn += $litersUsed;
-
-            // تقليل الكمية الحالية في التانك
             $tank->current_level -= $litersUsed;
-
-            // حفظ التحديثات
             $tank->save();
         }
 
         // ✅ تحديث بيانات الشيفت
         $shift->update([
-            'end_meter_reading' => $request->end_meter_reading,
-            'end_meter_image' => $imagePath,
-            'notes' => $request->notes,
+            'end_meter_reading' => $validated['end_meter_reading'],
+            'notes' => $validated['notes'] ?? null,
             'end_time' => now(),
             'cash_sales' => $cashLiters,
             'credit_sales' => $totalCreditLiters,
         ]);
 
-        // ✅ إعادة التوجيه
+        // ✅ التوجيه النهائي
         if (auth()->user()->hasRole('admin')) {
-            return redirect()->route('shifts.index')->with('success', 'تم إغلاق الشيفت وحساب الكاش بنجاح ✅');
+            return redirect()->route('shifts.index')
+                ->with('success', '✅ تم إغلاق الشيفت وتسجيل الصورة والعملية بنجاح.');
         }
 
         auth()->logout();
-        return redirect()->route('login')->with('success', 'تم إغلاق الشيفت وتسجيل الخروج بنجاح ✅');
+        return redirect()->route('login')
+            ->with('success', '✅ تم إغلاق الشيفت وتسجيل الخروج بنجاح.');
     }
+
+
 
     // تقرير شيفت
     public function report($id)
