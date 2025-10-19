@@ -38,11 +38,11 @@
             </a>
         @endcan
 
-        {{-- @can('show clients') --}}
+        @can('show clients')
             <a href="{{ route('clients.index') }}"
                class="nav-link {{ request()->is('clients*') ? 'active' : '' }}">
                 <i class="fa-solid fa-handshake"></i>  العملاء
             </a>
-        {{-- @endcan --}}
+        @endcan
     </nav>
 </div>

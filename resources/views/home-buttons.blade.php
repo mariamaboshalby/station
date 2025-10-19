@@ -8,8 +8,8 @@
         <div class="d-flex justify-content-center gap-3">
             <!-- زر فتح شيفت -->
             @if ($openShift)
-                <button class="btn btn-success btn-lg" disabled>
-                    <i class="fas fa-door-open me-2"></i> لا يوجد شيفت مفتوح
+                <button class="btn btn-success btn-lg" disabled hidden>
+                    <i class="fas fa-door-open me-2"></i> فتح شيفت
                 </button>
             @else
                 <a href="{{ route('shifts.create') }}" class="btn btn-success btn-lg">
