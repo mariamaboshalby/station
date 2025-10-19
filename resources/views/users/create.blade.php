@@ -86,6 +86,11 @@
                                         ['value' => 'edit tank', 'label' => 'تعديل تانك'],
                                         ['value' => 'show tanks', 'label' => 'عرض التانكات'],
                                     ],
+                                    'clients'=>[
+                                        ['value'=>'add client', 'label'=>'إضافه عميل'],
+                                        ['value'=>'edit client', 'label'=>'تعديل عميل'],
+                                        ['value'=>'show clients', 'label'=>'عرض العملاء'],
+                                    ],
                                     'dashboard' => [['value' => 'view dashboard', 'label' => 'عرض الداشبورد']],
                                 ];
 
@@ -101,6 +106,7 @@
                                     'shifts' => ['icon' => 'fa-clock', 'label' => 'الشيفتات'],
                                     'transactions' => ['icon' => 'fa-exchange-alt', 'label' => 'المعاملات'],
                                     'tanks' => ['icon' => 'fa-oil-can', 'label' => 'التانكات'],
+                                    'clients' => ['icon' => 'fa-handshake', 'label' => 'العملاء'],
                                     'dashboard' => ['icon' => 'fa-tachometer-alt', 'label' => 'الداشبورد'],
                                     '80' => ['icon' => 'fa-gas-pump', 'label' => 'بنزين 80'],
                                     '92' => ['icon' => 'fa-gas-pump', 'label' => 'بنزين 92'],

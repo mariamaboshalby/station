@@ -1,4 +1,4 @@
-{{-- @can('show clients') --}}
+@can('show clients')
 @extends('layouts.app')
 
 @section('content')
@@ -27,9 +27,9 @@
                             <th>المبلغ المدفوع</th>
                             <th>المبلغ المتبقي</th>
 
-                            {{-- @can('edit client') --}}
+                            @can('edit client')
                             <th>إجراءات</th>
-                            {{-- @endcan --}}
+                            @endcan
                         </tr>
                     </thead>
                     <tbody>
@@ -42,14 +42,14 @@
                                 <td>{{ $client->amount_paid }}</td>
                                 <td>{{ $client->rest }}</td>
 
-                                {{-- @can('edit client') --}}
+                                @can('edit client')
                                 <td>
                                     <x-button type="link" color="primary" size="sm" icon="plus" label="اضافه"
                                         :href="route('clients.addPaymentForm', $client->id)" />
                                     <x-button type="link" color="info" size="sm" icon="file-alt" label="تقرير"
                                         :href="route('clients.transactions', $client->id)" />
                                 </td>
-                                {{-- @endcan --}}
+                                @endcan
 
                             </tr>
                         @empty
@@ -65,4 +65,4 @@
         </div>
     </div>
 @endsection
-{{-- @endcan --}}
+@endcan
