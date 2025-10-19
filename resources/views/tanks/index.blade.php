@@ -23,6 +23,8 @@
                                 <tr>
                                     <th>#</th>
                                     <th>الاسم</th>
+                                    <th>السعر للعميل</th>
+                                    <th>السعر الاصلي</th>
                                     <th>السعة</th>
                                     <th>اللترات المخزنة</th>
                                     <th>اللترات المسحوبه</th>
@@ -36,6 +38,8 @@
                                     <tr>
                                         <td>{{ $tank->id }}</td>
                                         <td>تانك : {{ $tank->name }} - {{ $tank->fuel->name }}</td>
+                                        <td>{{ $tank->fuel->price_per_liter }}</td>
+                                        <td>{{ $tank->fuel->price_for_owner }}</td>
                                         <td>{{ $tank->capacity }}</td>
                                         <td>{{ $tank->current_level }}</td>
                                         <td>{{ $tank->liters_drawn ??0}}</td>
@@ -51,7 +55,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center">لا يوجد تانكات حالياً</td>
+                                        <td colspan="7" class="text-center">لا يوجد تانكات حالياً</td>
                                     </tr>
                                 @endforelse
                             </tbody>

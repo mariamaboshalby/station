@@ -40,7 +40,7 @@
                                 <input type="text" name="phone" class="form-control" required pattern="[0-9]{11}"
                                     maxlength="11" placeholder="01xxxxxxxxx">
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label class="form-label fw-bold"><i class="fa fa-key me-1"></i> كلمة المرور</label>
                                 <input type="password" name="password" class="form-control" required>
@@ -86,10 +86,10 @@
                                         ['value' => 'edit tank', 'label' => 'تعديل تانك'],
                                         ['value' => 'show tanks', 'label' => 'عرض التانكات'],
                                     ],
-                                    'clients'=>[
-                                        ['value'=>'add client', 'label'=>'إضافه عميل'],
-                                        ['value'=>'edit client', 'label'=>'تعديل عميل'],
-                                        ['value'=>'show clients', 'label'=>'عرض العملاء'],
+                                    'clients' => [
+                                        ['value' => 'add client', 'label' => 'إضافه عميل'],
+                                        ['value' => 'edit client', 'label' => 'تعديل عميل'],
+                                        ['value' => 'show clients', 'label' => 'عرض العملاء'],
                                     ],
                                     'dashboard' => [['value' => 'view dashboard', 'label' => 'عرض الداشبورد']],
                                 ];
@@ -153,60 +153,65 @@
         </div>
     @endcan
 @endsection
-
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const selectAllCheckbox = document.getElementById('selectAllPermissions');
-            const permissionCheckboxes = document.querySelectorAll('.permission-checkbox');
-            const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+            setTimeout(() => {
+                const selectAllCheckbox = document.getElementById('selectAllPermissions');
+                const permissionCheckboxes = document.querySelectorAll('.permission-checkbox');
+                const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
 
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
+                // اختيار الكل
+                selectAllCheckbox?.addEventListener('change', function() {
                     const isChecked = this.checked;
                     permissionCheckboxes.forEach(cb => cb.checked = isChecked);
-                    categoryCheckboxes.forEach(cb => cb.checked = isChecked);
+                    categoryCheckboxes.forEach(cb => {
+                        cb.checked = isChecked;
+                        cb.indeterminate = false;
+                    });
                 });
-            }
 
-            categoryCheckboxes.forEach(categoryCheckbox => {
-                categoryCheckbox.addEventListener('change', function() {
-                    const category = this.dataset.category;
-                    const isChecked = this.checked;
-                    document.querySelectorAll(`.permission-checkbox[data-category="${category}"]`)
-                        .forEach(cb => cb.checked = isChecked);
-                    updateSelectAllState();
+                // تغيير مجموعة معينة
+                categoryCheckboxes.forEach(cat => {
+                    cat.addEventListener('change', function() {
+                        const category = this.dataset.category;
+                        document.querySelectorAll(
+                                `.permission-checkbox[data-category="${category}"]`)
+                            .forEach(cb => cb.checked = this.checked);
+                        updateSelectAllState();
+                    });
                 });
-            });
 
-            permissionCheckboxes.forEach(cb => {
-                cb.addEventListener('change', function() {
-                    updateCategoryState(this.dataset.category);
-                    updateSelectAllState();
+                // تغيير صلاحية فردية
+                permissionCheckboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        updateCategoryState(this.dataset.category);
+                        updateSelectAllState();
+                    });
                 });
-            });
 
-            function updateCategoryState(category) {
-                const categoryPerms = document.querySelectorAll(
-                `.permission-checkbox[data-category="${category}"]`);
-                const categoryCheckbox = document.querySelector(`.category-checkbox[data-category="${category}"]`);
-
-                if (categoryCheckbox) {
-                    const allChecked = [...categoryPerms].every(c => c.checked);
-                    const anyChecked = [...categoryPerms].some(c => c.checked);
-                    categoryCheckbox.checked = allChecked;
-                    categoryCheckbox.indeterminate = anyChecked && !allChecked;
+                function updateCategoryState(category) {
+                    const categoryPerms = document.querySelectorAll(
+                        `.permission-checkbox[data-category="${category}"]`);
+                    const categoryCheckbox = document.querySelector(
+                        `.category-checkbox[data-category="${category}"]`);
+                    if (categoryCheckbox) {
+                        const allChecked = [...categoryPerms].every(c => c.checked);
+                        const anyChecked = [...categoryPerms].some(c => c.checked);
+                        categoryCheckbox.checked = allChecked;
+                        categoryCheckbox.indeterminate = anyChecked && !allChecked;
+                    }
                 }
-            }
 
-            function updateSelectAllState() {
-                const allChecked = [...permissionCheckboxes].every(cb => cb.checked);
-                const anyChecked = [...permissionCheckboxes].some(cb => cb.checked);
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.checked = allChecked;
-                    selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+                function updateSelectAllState() {
+                    const allChecked = [...permissionCheckboxes].every(cb => cb.checked);
+                    const anyChecked = [...permissionCheckboxes].some(cb => cb.checked);
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+                    }
                 }
-            }
+            }, 300);
         });
     </script>
 @endpush

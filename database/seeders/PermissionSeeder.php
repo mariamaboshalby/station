@@ -10,22 +10,22 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 class PermissionSeeder extends Seeder
 {
-      public function run()
+    public function run()
     {
- $modulesPermissions = [
-            'users'        => ['add user', 'show users'],
-            'shifts'       => ['open shift', 'show shifts', 'close shift', 'show report'],
+        $modulesPermissions = [
+            'users' => ['add user', 'show users'],
+            'shifts' => ['open shift', 'show shifts', 'close shift', 'show report'],
             'transactions' => ['add transaction', 'show transaction'],
-            'tanks'        => ['add tank', 'edit tank', 'show tanks'],
-            'clients'        => ['add client', 'edit client', 'show clients'],
-            'dashboard'    => ['view dashboard'],
+            'tanks' => ['add tank', 'edit tank', 'show tanks'],
+            'clients' => ['add client', 'edit client', 'show clients'],
+            'dashboard' => ['view dashboard'],
         ];
 
         // 🟢 إنشاء الصلاحيات العامة
         foreach ($modulesPermissions as $module => $permissions) {
             foreach ($permissions as $permission) {
                 Permission::firstOrCreate([
-                    'name'       => $permission,
+                    'name' => $permission,
                     'guard_name' => 'web',
                 ]);
             }
@@ -33,7 +33,7 @@ class PermissionSeeder extends Seeder
 
         // 🟢 إنشاء الأدوار
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $userRole  = Role::firstOrCreate(['name' => 'user',  'guard_name' => 'web']);
+        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
         // ------------------------------
         // 🟢 جلب كل الطلمبات من الداتابيز
@@ -46,7 +46,7 @@ class PermissionSeeder extends Seeder
             $permissionName = "use_pump_{$pump->id}";
 
             Permission::firstOrCreate([
-                'name'       => $permissionName,
+                'name' => $permissionName,
                 'guard_name' => 'web',
             ]);
 
@@ -62,11 +62,12 @@ class PermissionSeeder extends Seeder
         $adminUser = User::updateOrCreate(
             ['phone' => '01111111111'],
             [
-                'name'     => 'Admin',
+                'name' => 'Admin',
                 'password' => Hash::make('12345678'),
             ]
         );
 
         $adminUser->assignRole($adminRole);
         $generalPermissionsCount = count($modulesPermissions, COUNT_RECURSIVE) - count($modulesPermissions);
-    }}
+    }
+}

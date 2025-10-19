@@ -107,20 +107,18 @@ class ClientController extends Controller
 
         return redirect()->route('clients.index')->with('success', 'تمت إضافة المبلغ بنجاح.');
     }
-public function search(Request $request)
-{
-    $term = $request->get('term');
+    public function search(Request $request)
+    {
+        $term = $request->get('term');
 
-    $clients = Client::query()
-        ->where('name', 'LIKE', "%{$term}%")
-        ->take(10)
-        ->get(['id', 'name']);
+        $clients = Client::query()
+            ->where('name', 'LIKE', "%{$term}%")
+            ->take(10)
+            ->get(['id', 'name']);
 
-    return response()->json($clients);
-}
-
-
-
+        return response()->json($clients);
+    }
+    
     public function show($id)
     {
         $client = Client::findOrFail($id);

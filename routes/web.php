@@ -2,11 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\FuelController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TankController;
 use App\Http\Controllers\UserController;
+use App\Models\Shift;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,7 +40,7 @@ Route::get('/dashboard', function () {
 Route::get('/home-buttons', function () {
     $user = auth()->user();
 
-    $openShift = \App\Models\Shift::where('user_id', $user->id)
+    $openShift = Shift::where('user_id', $user->id)
         ->whereNull('end_time')
         ->first();
 
@@ -62,12 +64,12 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('tanks', TankController::class);
     Route::get('/tanks/{id}/add-capacity', [TankController::class, 'addCapacityForm'])->name('tanks.addCapacityForm');
     Route::post('/tanks/{id}/add-capacity', [TankController::class, 'addCapacity'])->name('tanks.addCapacity');
+    Route::put('/tanks/{id}/updateAll', [TankController::class, 'updateAll'])->name('tanks.updateAll');
 
     /** 💰 العمليات (Transactions) */
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
     Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
-    // ✅ لاحظ: غيرت '/transactions/store' إلى '/transactions' لأن RESTful routes تستخدم نفس الـ resource base
 
     /** 👥 العملاء */
     Route::get('/clients/search', [ClientController::class, 'search'])->name('clients.search');
