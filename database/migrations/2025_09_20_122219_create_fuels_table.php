@@ -13,8 +13,9 @@ return new class extends Migration {
     {
         Schema::create('fuels', function (Blueprint $table) {
             $table->id();
-           $table->string('name')->unique();
-            $table->decimal('price_per_liter', 8, 2); // سعر اللتر
+            $table->string('name')->unique();
+            $table->decimal('price_per_liter', 8, 2)->default(0); 
+            $table->decimal('price_for_owner', 8, 2)->default(0); 
             $table->timestamps();
         });
 

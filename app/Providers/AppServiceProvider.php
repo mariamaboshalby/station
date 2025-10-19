@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
 
             // تكلفة اللترات الموجودة حاليًا في التانكات (تكلفة الشراء)
             $totalTankValue = Tank::with('fuel')->get()
-                ->sum(fn($tank) => $tank->current_level * $tank->fuel->price_per_liter);
+                ->sum(fn($tank) => $tank->current_level * $tank->fuel->price_for_owner);
 
             $capital = ($totalCash + $totalClientRest) - $totalTankValue;
 

@@ -61,19 +61,28 @@ class TankController extends Controller
         $tank = Tank::findOrFail($id);
         return view('tanks.edit', compact('tank'));
     }
-
-    public function update(Request $request, $id)
+    public function updateAll(Request $request, $id)
     {
-        $request->validate([
+        $tank = Tank::with('fuel')->findOrFail($id);
+
+        $validated = $request->validate([
             'current_level' => 'required|numeric|min:0',
+            'price_per_liter' => 'required|numeric|min:0',
+            'price_for_owner' => 'required|numeric|min:0',
         ]);
 
-        $tank = Tank::findOrFail($id);
-        $tank->current_level = $request->current_level;
-        $tank->save();
+        // ✅ تحديث التانك
+        $tank->update(['current_level' => $validated['current_level']]);
 
-        return redirect()->route('tanks.index', $id)->with('success', 'تم تحديث سعة التانك بنجاح ✅');
+        // ✅ تحديث أسعار الوقود المرتبط
+        $tank->fuel->update([
+            'price_per_liter' => $validated['price_per_liter'],
+            'price_for_owner' => $validated['price_for_owner'],
+        ]);
+
+        return redirect()->route('tanks.index')->with('success', 'تم التحديث بنجاح ✅');
     }
+
     public function addCapacityForm($id)
     {
         $tank = Tank::findOrFail($id);
