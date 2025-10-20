@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientRefuelingController;
 use App\Http\Controllers\FuelController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShiftController;
@@ -77,6 +78,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/clients/{id}/transactions', [ClientController::class, 'transactions'])->name('clients.transactions');
     Route::get('/clients/{id}/add-payment', [ClientController::class, 'addPaymentForm'])->name('clients.addPaymentForm');
     Route::post('/clients/{id}/add-payment', [ClientController::class, 'addPayment'])->name('clients.addPayment');
+
+    Route::delete('/client_refuelings/{id}', [ClientRefuelingController::class, 'destroy'])
+        ->name('client_refuelings.destroy');
 });
 
 require __DIR__ . '/auth.php';

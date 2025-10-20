@@ -46,8 +46,17 @@
                                         <td>{{ $user->phone }}</td>
                                         <td>{{ $user->created_at->format('Y-m-d H:i') }}</td>
                                         <td>
-                                            <a href="{{ route('users.shifts', $user->id) }}" class="btn btn-sm btn-info">
+                                            <a href="{{ route('users.shifts', $user->id) }}" class="btn btn-sm btn-primary">
                                                 <i class="fas fa-file-alt me-1"></i>
+                                            </a>
+                                            <a href="{{ route('users.show', $user->id) }}" class="btn btn-sm btn-info">
+                                                <i class="fa-solid fa-circle-info"></i>
+                                            </a>
+                                            <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-edit me-1"></i>
+                                            </a>
+                                            <a href="{{ route('users.destroy', $user->id) }}" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash me-1"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -57,7 +66,7 @@
                                     </tr>
                                 @endforelse
                             </tbody>
-                        </table>              
+                        </table>
                     </div>
                 </div>
 

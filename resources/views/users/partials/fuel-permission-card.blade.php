@@ -68,33 +68,3 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // عند الضغط على "اختر الكل"
-    document.querySelectorAll('.category-checkbox').forEach(categoryCheckbox => {
-        categoryCheckbox.addEventListener('change', function() {
-            const category = this.dataset.category;
-            const permissions = document.querySelectorAll(`.permission-checkbox[data-category="${category}"]`);
-            permissions.forEach(perm => perm.checked = this.checked);
-        });
-    });
-
-    // لما يغير المستخدم صلاحية فرعية
-    document.querySelectorAll('.permission-checkbox').forEach(permissionCheckbox => {
-        permissionCheckbox.addEventListener('change', function() {
-            const category = this.dataset.category;
-            const permissions = document.querySelectorAll(`.permission-checkbox[data-category="${category}"]`);
-            const allChecked = Array.from(permissions).every(p => p.checked);
-            const anyChecked = Array.from(permissions).some(p => p.checked);
-            const categoryCheckbox = document.querySelector(`#category_${category}`);
-
-            if (categoryCheckbox) {
-                categoryCheckbox.checked = allChecked;
-                categoryCheckbox.indeterminate = anyChecked && !allChecked;
-            }
-        });
-    });
-});
-</script>
-@endpush
