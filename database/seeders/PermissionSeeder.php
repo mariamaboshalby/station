@@ -61,6 +61,7 @@ class PermissionSeeder extends Seeder
         // ------------------------------
         $adminUser = User::updateOrCreate(
             ['phone' => '01064093034'],
+            
             [
                 'name' => 'Admin',
                 'password' => Hash::make('12345678'),

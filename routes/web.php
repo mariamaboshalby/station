@@ -20,6 +20,7 @@ use App\Models\Shift;
 // الصفحة الرئيسية -> توجيه حسب نوع المستخدم
 Route::get('/', function () {
     if (auth()->check()) {
+        
         if (auth()->user()->phone === '01064093034') {
             // الأدمن
             return redirect()->route('dashboard');
