@@ -37,11 +37,9 @@ class ClientController extends Controller
         $pricePerLiter = 0;
         $totalPrice = 0;
 
-        // ✅ لو المستخدم اختار طلمبة
         if ($request->filled('pump_id')) {
             $pump = Pump::with('tank.fuel')->findOrFail($request->pump_id);
 
-            // 🟢 آخر عملية على الطلمبة
             $lastTransaction = Transaction::where('pump_id', $pump->id)
                 ->latest()
                 ->first();
@@ -55,12 +53,10 @@ class ClientController extends Controller
             $totalPrice = $litersDrawn * $pricePerLiter;
         }
 
-        // الباقي
         $rest = $request->amount_paid - $totalPrice;
 
-        // إنشاء العميل
         Client::create([
-            'pump_id' => $pump?->id,   // nullable
+            'pump_id' => $pump?->id,
             'name' => $request->name,
             'liters_drawn' => $litersDrawn,
             'total_price' => $totalPrice,
@@ -71,6 +67,41 @@ class ClientController extends Controller
         return redirect()->route('clients.index')
             ->with('success', 'تم إضافة العميل بنجاح');
     }
+
+    // تعديل بيانات العميل
+    public function edit($id)
+    {
+        $client = Client::findOrFail($id);
+        $pumps = Pump::with('tank.fuel')->get();
+        return view('clients.edit', compact('client', 'pumps'));
+    }
+
+    // حفظ التعديلات
+    // حفظ التعديلات (تعديل الاسم فقط)
+public function update(Request $request, $id)
+{
+    $client = Client::findOrFail($id);
+
+    $request->validate([
+        'name' => 'required|string|max:255',
+    ]);
+
+    $client->update([
+        'name' => $request->name,
+    ]);
+
+    return redirect()->route('clients.index')->with('success', 'تم تعديل اسم العميل بنجاح');
+}
+
+    // حذف العميل
+    public function destroy($id)
+    {
+        $client = Client::findOrFail($id);
+        $client->delete();
+
+        return redirect()->route('clients.index')->with('success', 'تم حذف العميل بنجاح');
+    }
+
     public function transactions($id)
     {
         $client = Client::findOrFail($id);
@@ -80,12 +111,12 @@ class ClientController extends Controller
             ->latest()
             ->get();
 
-        // إجماليات
         $totalLiters = $transactions->sum(fn($t) => $t->cash_liters + $t->credit_liters);
         $totalAmount = $transactions->sum('total_amount');
 
         return view('clients.transactions', compact('client', 'transactions', 'totalLiters', 'totalAmount'));
     }
+
     public function addPaymentForm($id)
     {
         $client = Client::findOrFail($id);
@@ -99,14 +130,14 @@ class ClientController extends Controller
         $request->validate([
             'added_amount' => 'required|numeric|min:0.01',
         ]);
-        // تحديث المبلغ المدفوع
+
         $client->amount_paid += $request->added_amount;
-        // إعادة حساب الباقي
         $client->rest = $client->amount_paid - $client->total_price;
         $client->save();
 
         return redirect()->route('clients.index')->with('success', 'تمت إضافة المبلغ بنجاح.');
     }
+
     public function search(Request $request)
     {
         $term = $request->get('term');
@@ -118,11 +149,10 @@ class ClientController extends Controller
 
         return response()->json($clients);
     }
-    
+
     public function show($id)
     {
         $client = Client::findOrFail($id);
         return response()->json($client);
     }
-
 }
