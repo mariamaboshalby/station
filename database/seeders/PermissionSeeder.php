@@ -60,7 +60,7 @@ class PermissionSeeder extends Seeder
         // 🟢 إنشاء يوزر الأدمن الافتراضي
         // ------------------------------
         $adminUser = User::updateOrCreate(
-            ['phone' => '01111111111'],
+            ['phone' => '01064093034'],
             [
                 'name' => 'Admin',
                 'password' => Hash::make('12345678'),
