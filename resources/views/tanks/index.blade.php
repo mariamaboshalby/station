@@ -18,16 +18,16 @@
 
                         <x-alert-success />
 
-                        <table class="table table-hover table-striped text-center " >
+                        <table class="table table-hover table-striped text-center">
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
                                     <th>الاسم</th>
                                     <th>السعر للعميل</th>
-                                    <th>السعر الاصلي</th>
+                                    <th>السعر الأصلي</th>
                                     <th>السعة</th>
                                     <th>اللترات المخزنة</th>
-                                    <th>اللترات المسحوبه</th>
+                                    <th>اللترات المسحوبة</th>
                                     @can('edit tank')
                                         <th>إجراءات</th>
                                     @endcan
@@ -42,20 +42,33 @@
                                         <td>{{ $tank->fuel->price_for_owner }}</td>
                                         <td>{{ $tank->capacity }}</td>
                                         <td>{{ $tank->current_level }}</td>
-                                        <td>{{ $tank->liters_drawn ??0}}</td>
+                                        <td>{{ $tank->liters_drawn ?? 0 }}</td>
+
                                         @can('edit tank')
-                                            <td>
+                                            <td class="d-flex justify-content-center gap-1">
+                                                {{-- زر تعديل --}}
                                                 <x-button type="link" color="primary" size="sm" icon="edit"
                                                     label="تعديل" :href="route('tanks.edit', $tank->id)" />
+
+                                                {{-- زر إضافة --}}
                                                 <x-button type="link" color="success" size="sm" icon="plus"
                                                     label="إضافة" :href="route('tanks.addCapacityForm', $tank->id)" />
+
+                                                {{-- زر حذف --}}
+                                                <form action="{{ route('tanks.destroy', $tank->id) }}" method="POST" class="d-inline"
+                                                    onsubmit="return confirm('هل أنت متأكد من حذف هذا التانك؟');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i> 
+                                                    </button>
+                                                </form>
                                             </td>
                                         @endcan
-
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center">لا يوجد تانكات حالياً</td>
+                                        <td colspan="8" class="text-center">لا يوجد تانكات حالياً</td>
                                     </tr>
                                 @endforelse
                             </tbody>
