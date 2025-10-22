@@ -54,13 +54,15 @@ class TankController extends Controller
             }
         }
 
-        return redirect()->route('tanks.index')->with('success', 'Tank, pumps, and nozzles created successfully!');
+        return redirect()->route('tanks.index')->with('success', 'تم إنشاء التانك والطلمبات والمسدسات بنجاح ✅');
     }
+
     public function edit($id)
     {
         $tank = Tank::findOrFail($id);
         return view('tanks.edit', compact('tank'));
     }
+
     public function updateAll(Request $request, $id)
     {
         $tank = Tank::with('fuel')->findOrFail($id);
@@ -88,6 +90,7 @@ class TankController extends Controller
         $tank = Tank::findOrFail($id);
         return view('tanks.add-capacity', compact('tank'));
     }
+
     public function addCapacity(Request $request, $id)
     {
         $request->validate([
@@ -106,5 +109,20 @@ class TankController extends Controller
         return redirect()->route('tanks.index')->with('success', '✅ تم إضافة الكمية للتانك بنجاح.');
     }
 
+    // ✅ دالة الحذف
+    public function destroy($id)
+    {
+        $tank = Tank::findOrFail($id);
 
+        // حذف الطلمبات والمسدسات المرتبطة به
+        foreach ($tank->pumps as $pump) {
+            $pump->nozzles()->delete();
+            $pump->delete();
+        }
+
+        // حذف التانك نفسه
+        $tank->delete();
+
+        return redirect()->route('tanks.index')->with('success', '🗑️ تم حذف التانك وكل متعلقاته بنجاح.');
+    }
 }

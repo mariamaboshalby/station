@@ -55,9 +55,16 @@
                                             <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-success">
                                                 <i class="fas fa-edit me-1"></i>
                                             </a>
-                                            <a href="{{ route('users.destroy', $user->id) }}" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash me-1"></i>
-                                            </a>
+                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST"
+                                                class="d-inline"
+                                                onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم؟');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash me-1"></i>
+                                                </button>
+                                            </form>
+
                                         </td>
                                     </tr>
                                 @empty

@@ -17,12 +17,16 @@
                 </a>
             @endif
 
-
-            <!-- زر عملية بيع آجل -->
-            <a href="{{ route('transactions.create', ['type' => 'credit']) }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-shopping-cart me-2"></i> عملية بيع آجل
-            </a>
-
+            @if ($openShift)
+                <!-- زر عملية بيع آجل -->
+                <a href="{{ route('transactions.create', ['type' => 'credit']) }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-shopping-cart me-2"></i> عملية بيع آجل
+                </a>
+            @else
+                <button class="btn btn-primary btn-lg" disabled>
+                    <i class="fas fa-shopping-cart me-2"></i> عملية بيع آجل 
+                </button>
+            @endif
             <!-- زر إغلاق شيفت -->
             @if ($openShift)
                 <a href="{{ route('shifts.closeForm', $openShift->id) }}" class="btn btn-danger btn-lg">

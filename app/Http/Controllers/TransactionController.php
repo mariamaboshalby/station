@@ -94,11 +94,9 @@ class TransactionController extends Controller
             'total_amount' => $totalAmount,
         ]);
 
-        // 🔹 حفظ الصورة باستخدام Spatie
-        if ($request->hasFile('image')) {
-            $transaction
-                ->addMediaFromRequest('image')
-                ->toMediaCollection('transactions');
+ // 🔹 حفظ الصورة باستخدام Spatie في فولدر public/uploads
+    if ($request->hasFile('image')) {
+        $transaction->addMediaFromRequest('image')->toMediaCollection('transactions', 'uploads'); // 'uploads' هو الـ disk الجديد
         }
 
         // 🔹 لو العملية تخص عميل آجل
@@ -133,6 +131,6 @@ class TransactionController extends Controller
 
         $transaction->delete();
 
-        return redirect()->back()->with('success', 'تم حذف العملية بنجاح 🗑️');
+        return redirect()->back()->with('success', 'تم حذف العملية بنجاح 🗑');
     }
 }

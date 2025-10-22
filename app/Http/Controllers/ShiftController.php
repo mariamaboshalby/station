@@ -69,8 +69,8 @@ class ShiftController extends Controller
         ]);
 
         // 🟢 رفع صورة العداد باستخدام Spatie
-        $shift->addMediaFromRequest('meter_image')
-            ->toMediaCollection('start_meter_images');
+$shift->addMediaFromRequest('meter_image')
+      ->toMediaCollection('start_meter_images', 'uploads'); // 'uploads' هو الـ disk الجديد
 
         return redirect()->route('transactions.create', ['shift_id' => $shift->id])
             ->with('success', 'تم فتح الشيفت بنجاح، يمكنك إضافة العمليات الآن ✅');
@@ -109,7 +109,7 @@ class ShiftController extends Controller
         $pump = Pump::with('tank.fuel')->whereIn('id', $userPumpIds)->first();
 
         if (!$pump) {
-            return back()->with('error', '⚠️ لا يمكن تحديد الطلمبة من صلاحيات المستخدم.');
+            return back()->with('error', '⚠ لا يمكن تحديد الطلمبة من صلاحيات المستخدم.');
         }
 
         // ✅ السعر الإجمالي
@@ -129,16 +129,18 @@ class ShiftController extends Controller
 
         // ✅ حفظ الصورة بنفس أسلوب TransactionController
         if ($request->hasFile('end_meter_image')) {
+                if ($request->hasFile('end_meter_image')) {
             // أولاً حفظ الصورة في الـ transaction
-            $media = $transaction
-                ->addMediaFromRequest('end_meter_image')
-                ->toMediaCollection('transactions');
+        $media = $transaction
+        ->addMediaFromRequest('end_meter_image')
+        ->toMediaCollection('transactions', 'uploads');
 
             // ثانياً نسخ نفس الصورة لمجموعة الشيفت
-            $shift
-                ->addMedia($media->getPath())
-                ->preservingOriginal()
-                ->toMediaCollection('end_meter_images');
+        $shift
+        ->addMedia($media->getPath())
+        ->preservingOriginal()
+        ->toMediaCollection('end_meter_images', 'uploads');
+        }
         }
 
         // ✅ تحديث بيانات التانك
