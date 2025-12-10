@@ -16,6 +16,7 @@ class Client extends Model
         'total_price',
         'amount_paid',
         'rest',
+        'is_active',
     ];
 
     public function pump()

@@ -6,7 +6,7 @@
             <div class="row justify-content-center">
                 <div class="col-12">
 
-                    <x-card title="قائمة التانكات">
+                    <x-card title="قائمة التانكات" >
 
                         <div class="d-flex justify-content-between mb-3">
                             <span></span>
@@ -21,15 +21,15 @@
                         <table class="table table-hover table-striped text-center">
                             <thead class="table-light">
                                 <tr>
-                                    <th>#</th>
-                                    <th>الاسم</th>
-                                    <th>السعر للعميل</th>
-                                    <th>السعر الأصلي</th>
-                                    <th>السعة</th>
-                                    <th>اللترات المخزنة</th>
-                                    <th>اللترات المسحوبة</th>
+                                    <th><i class="fas fa-hashtag"></i> #</th>
+                                    <th><i class="fas fa-gas-pump"></i> الاسم</th>
+                                    <th><i class="fas fa-money-bill"></i> السعر للعميل</th>
+                                    <th><i class="fas fa-dollar-sign"></i> السعر الأصلي</th>
+                                    <th><i class="fas fa-database"></i> السعة</th>
+                                    <th><i class="fas fa-tint"></i> اللترات المخزنة</th>
+                                    <th><i class="fas fa-arrow-down"></i> اللترات المسحوبة</th>
                                     @can('edit tank')
-                                        <th>إجراءات</th>
+                                        <th><i class="fas fa-cogs"></i> إجراءات</th>
                                     @endcan
                                 </tr>
                             </thead>
@@ -46,6 +46,10 @@
 
                                         @can('edit tank')
                                             <td class="d-flex justify-content-center gap-1">
+                                                {{-- زر التقرير --}}
+                                                <x-button type="link" color="info" size="sm" icon="chart-bar"
+                                                    label="تقرير" :href="route('tanks.report', $tank->id)" />
+
                                                 {{-- زر تعديل --}}
                                                 <x-button type="link" color="primary" size="sm" icon="edit"
                                                     label="تعديل" :href="route('tanks.edit', $tank->id)" />

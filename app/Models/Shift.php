@@ -47,7 +47,14 @@ class Shift extends Model implements HasMedia
         return $this->belongsTo(Pump::class);
     }
 
+    public function nozzleReadings()
+    {
+        return $this->hasMany(ShiftNozzleReading::class);
+    }
+
     // ✅ تعريف التحويلات (Conversions) للصور
+    // ✅ تم إيقاف التحويلات مؤقتاً لتجنب مشاكل مكتبة GD
+    /*
     public function registerMediaConversions(Media $media = null): void
     {
         $this->addMediaConversion('thumb')
@@ -56,4 +63,5 @@ class Shift extends Model implements HasMedia
             ->sharpen(10)
             ->nonQueued();
     }
+    */
 }

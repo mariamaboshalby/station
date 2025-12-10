@@ -14,7 +14,10 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('shift_id')->constrained()->cascadeOnDelete();
             $table->foreignId('pump_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('nozzle_id')->nullable();
+            $table->foreign('nozzle_id')->references('id')->on('nozzles')->onDelete('cascade');
             $table->foreignId('client_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->string('vehicle_number')->nullable();
             $table->decimal('credit_liters', 10, 2)->default(0);
             $table->decimal('cash_liters', 10, 2)->default(0);
             $table->decimal('total_amount', 20, 2)->default(0);

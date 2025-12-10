@@ -6,6 +6,7 @@ use App\Models\Fuel;
 use App\Models\Tank;
 use App\Models\Pump;
 use App\Models\Nozzle;
+use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
 
 class TankController extends Controller
@@ -14,6 +15,13 @@ class TankController extends Controller
     {
         $tanks = Tank::all();
         return view('tanks.index', compact('tanks'));
+    }
+
+    public function report($id)
+    {
+        // عرض تقرير تانك محدد
+        $tank = Tank::with(['fuel', 'pumps.nozzles'])->findOrFail($id);
+        return view('tanks.report-detail', compact('tank'));
     }
 
     public function create()
@@ -95,18 +103,40 @@ class TankController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
+            'cost_per_liter' => 'nullable|numeric|min:0',
+            'deduct_from_treasury' => 'nullable|in:on,off',
         ]);
 
-        $tank = Tank::findOrFail($id);
+        $tank = Tank::with('fuel')->findOrFail($id);
 
         if ($tank->current_level + $request->amount > $tank->capacity) {
             return redirect()->back()->with('error', '⚠️ الكمية أكبر من السعة الكلية للتانك.');
         }
 
+        // 1. حساب المصروف وإضافته للخزنة إذا لزم الأمر
+        if ($request->has('deduct_from_treasury') && $request->cost_per_liter > 0) {
+            $totalCost = $request->amount * $request->cost_per_liter;
+            
+            TreasuryTransaction::create([
+                'user_id' => auth()->id(), // المستخدم الحالي
+                'type' => 'expense',
+                'category' => 'شراء وقود (تفريغ تانك)',
+                'amount' => $totalCost,
+                'transaction_date' => now(),
+                'description' => "تفريغ حمولة {$request->amount} لتر في {$tank->name} (سعر اللتر {$request->cost_per_liter})",
+            ]);
+        }
+
+        // 2. تحديث التانك
         $tank->current_level += $request->amount;
         $tank->save();
+        
+        $msg = '✅ تم إضافة الكمية للتانك بنجاح.';
+        if($request->has('deduct_from_treasury') && $request->cost_per_liter > 0) {
+            $msg .= ' وتم تسجيل المصروف في الخزنة.';
+        }
 
-        return redirect()->route('tanks.index')->with('success', '✅ تم إضافة الكمية للتانك بنجاح.');
+        return redirect()->route('tanks.index')->with('success', $msg);
     }
 
     // ✅ دالة الحذف

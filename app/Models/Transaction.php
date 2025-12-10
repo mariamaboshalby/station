@@ -15,23 +15,18 @@ class Transaction extends Model implements HasMedia
     protected $fillable = [
         'shift_id',
         'pump_id',
+        'nozzle_id',
         'client_id',
+        'vehicle_number',
         'credit_liters',
         'cash_liters',
         'total_amount',
         'notes',
     ];
 
-    /**
-     * 🔄 إعداد تحويلات الصور (مثل النسخ المصغّرة)
-     */
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(300)
-            ->height(300)
-            ->quality(75)
-            ->nonQueued(); // ينفذ التحويل فوراً بدون كيو
+        // تعطيل التحويلات مؤقتاً
     }
 
     /**
@@ -40,6 +35,11 @@ class Transaction extends Model implements HasMedia
     public function shift()
     {
         return $this->belongsTo(Shift::class);
+    }
+
+    public function nozzle()
+    {
+        return $this->belongsTo(Nozzle::class);
     }
 
     public function pump()

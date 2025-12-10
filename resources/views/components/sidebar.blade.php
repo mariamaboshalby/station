@@ -26,7 +26,7 @@
 
         @can('show tanks')
             <a href="{{ route('tanks.index') }}"
-               class="nav-link {{ request()->is('tanks*') ? 'active' : '' }}">
+               class="nav-link {{ request()->is('tanks') || request()->is('tanks/create') || request()->is('tanks/*/edit') || request()->is('tanks-report/*') ? 'active' : '' }}">
                 <i class="fas fa-gas-pump me-2"></i> التانكات
             </a>
         @endcan
@@ -43,6 +43,58 @@
                class="nav-link {{ request()->is('clients*') ? 'active' : '' }}">
                 <i class="fa-solid fa-handshake"></i>  العملاء
             </a>
+        @endcan
+
+     
+        @can('view dashboard')
+            <a href="#financeSubmenu" data-bs-toggle="collapse" 
+               class="nav-link d-flex justify-content-between align-items-center {{ request()->is('reports*') || request()->is('expenses*') || request()->is('treasury*') ? 'active' : '' }}" 
+               role="button" aria-expanded="{{ request()->is('reports*') || request()->is('expenses*') || request()->is('treasury*') ? 'true' : 'false' }}">
+               <span>
+                   <i class="fas fa-coins me-2"></i> الحسابات والتقارير
+               </span>
+               <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {{ request()->is('reports*') || request()->is('expenses*') || request()->is('treasury*') ? 'show' : '' }} bg-black bg-opacity-25" id="financeSubmenu">
+                <nav class="nav flex-column ps-3">
+                    <a href="{{ route('treasury.index') }}" class="nav-link {{ request()->routeIs('treasury.index') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-wallet text-warning me-2"></i> الصندوق اليومي
+                    </a>
+                    <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.index') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-file-invoice-dollar me-2"></i> كشف الحساب العام
+                    </a>
+                    <a href="{{ route('expenses.index') }}" class="nav-link {{ request()->routeIs('expenses.index') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-arrow-down text-danger me-2"></i> المصروفات
+                    </a>
+                    <a href="{{ route('reports.revenues') }}" class="nav-link {{ request()->routeIs('reports.revenues') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-arrow-up text-success me-2"></i> الإيرادات
+                    </a>
+                </nav>
+            </div>
+        @endcan
+
+        @can('show tanks')
+            <a href="#inventorySubmenu" data-bs-toggle="collapse" 
+               class="nav-link d-flex justify-content-between align-items-center {{ request()->is('inventory*') ? 'active' : '' }}" 
+               role="button" aria-expanded="{{ request()->is('inventory*') ? 'true' : 'false' }}">
+               <span>
+                   <i class="fas fa-boxes me-2"></i> الجرد
+               </span>
+               <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {{ request()->is('inventory*') ? 'show' : '' }} bg-black bg-opacity-25" id="inventorySubmenu">
+                <nav class="nav flex-column ps-3">
+                    <a href="{{ route('inventory.index', ['type' => 'daily']) }}" class="nav-link {{ request()->routeIs('inventory.index') && request('type') == 'daily' ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-calendar-day me-2"></i> الجرد اليومي
+                    </a>
+                    <a href="{{ route('inventory.index', ['type' => 'monthly']) }}" class="nav-link {{ request()->routeIs('inventory.index') && request('type') == 'monthly' ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-calendar-alt me-2"></i> الجرد الشهري
+                    </a>
+                    <a href="{{ route('inventory.report') }}" class="nav-link {{ request()->routeIs('inventory.report') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-chart-bar me-2"></i> تقارير الجرد
+                    </a>
+                </nav>
+            </div>
         @endcan
     </nav>
 </div>

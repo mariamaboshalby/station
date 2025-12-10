@@ -27,7 +27,29 @@
                                 </div>
                             @endrole
 
-                            {{-- استلام العداد --}}
+                            {{-- عرض المسدسات المتاحة --}}
+                            <div class="mb-4">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="fas fa-gas-pump me-1"></i> العدادات التي سيتم استلامها:
+                                </label>
+                                <div class="row g-2">
+                                    @foreach($nozzles as $nozzle)
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1 text-dark fw-bold">{{ $nozzle->name }}</h6>
+                                                    <small class="text-muted d-block">{{ $nozzle->pump->tank->fuel->name ?? '-' }}</small>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-secondary mb-1">القراءة الحالية</span>
+                                                    <h5 class="mb-0 text-primary fw-bold">{{ $nozzle->meter_reading }}</h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="meter_reading" class="form-label">قراءة/استلام العداد</label>
                                 <input type="number" name="meter_reading" id="meter_reading" class="form-control"

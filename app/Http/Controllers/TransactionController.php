@@ -12,11 +12,33 @@ use Illuminate\Http\Request;
 class TransactionController extends Controller
 {
     // عرض كل العمليات
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Transaction::with(['shift.user', 'pump.tank.fuel', 'client', 'media'])
-            ->latest()
-            ->get();
+        $query = Transaction::with(['shift.user', 'pump.tank.fuel', 'client', 'media'])->latest();
+
+        // تصفية حسب العميل
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+
+        // تصفية حسب الموظف
+        if ($request->filled('user_id')) {
+            $query->whereHas('shift', function ($q) use ($request) {
+                $q->where('user_id', $request->user_id);
+            });
+        }
+
+        // تصفية حسب التاريخ من
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        // تصفية حسب التاريخ إلى
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        $transactions = $query->get();
 
         // حساب المبلغ الإجمالي
         $transactions->transform(function ($t) {
@@ -25,22 +47,26 @@ class TransactionController extends Controller
             return $t;
         });
 
-        return view('transactions.index', compact('transactions'));
+        $clients = Client::all();
+        $users = \App\Models\User::all();
+
+        return view('transactions.index', compact('transactions', 'clients', 'users'));
     }
 
     // نموذج إنشاء عملية جديدة
     public function create()
     {
-        // 🔹 الطلمبات
+        // 🔹 المسدسات المتاحة
         if (auth()->user()->hasRole('admin')) {
-            $pumps = Pump::with('tank.fuel')->get();
+            $nozzles = \App\Models\Nozzle::with(['pump.tank.fuel'])->get();
         } else {
-            $userPermissions = auth()->user()->getPermissionNames()
+            // جلب المسدسات المسموح بها للمستخدم
+            $userPumpIds = auth()->user()->getPermissionNames()
                 ->filter(fn($perm) => str_starts_with($perm, 'use_pump_'))
                 ->map(fn($perm) => (int) str_replace('use_pump_', '', $perm));
 
-            $pumps = Pump::with('tank.fuel')
-                ->whereIn('id', $userPermissions)
+            $nozzles = \App\Models\Nozzle::with(['pump.tank.fuel'])
+                ->whereIn('pump_id', $userPumpIds)
                 ->get();
         }
 
@@ -55,13 +81,13 @@ class TransactionController extends Controller
                 ->get();
         }
 
-        // 🔹 العملاء
-        $clients = Client::all();
+        // 🔹 العملاء (النشطين فقط)
+        $clients = Client::where('is_active', true)->get();
 
         // 🔹 تحديد الشيفت الحالي
         $shift = $shifts->first();
 
-        return view('transactions.create', compact('clients', 'pumps', 'shift', 'shifts'));
+        return view('transactions.create', compact('clients', 'nozzles', 'shift', 'shifts'));
     }
 
     // حفظ العملية
@@ -69,34 +95,38 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'shift_id' => 'required|exists:shifts,id',
-            'pump_id' => 'required|exists:pumps,id',
+            'nozzle_id' => 'required|exists:nozzles,id',
             'credit_liters' => 'required|numeric|min:0.01',
+            'vehicle_number' => 'nullable|string|max:50',
             'image' => 'required|image|mimes:jpeg,png,jpg|max:4096',
             'notes' => 'nullable|string|max:500',
             'client_id' => 'nullable|exists:clients,id',
         ]);
 
-        // 🔹 جلب الطلمبة وسعر اللتر
-        $pump = Pump::with('tank.fuel')->findOrFail($validated['pump_id']);
+        // 🔹 جلب بيانات المسدس ومنها الطلمبة وسعر اللتر
+        $nozzle = \App\Models\Nozzle::with('pump.tank.fuel')->findOrFail($validated['nozzle_id']);
+        $pump = $nozzle->pump;
         $fuelPrice = $pump->tank->fuel->price_per_liter ?? 0;
 
         // 🔹 حساب المجموع الكلي
         $totalAmount = $validated['credit_liters'] * $fuelPrice;
 
-        // 🔹 إنشاء العملية أولًا
+        // 🔹 إنشاء العملية
         $transaction = Transaction::create([
             'shift_id' => $validated['shift_id'],
-            'pump_id' => $validated['pump_id'],
+            'pump_id' => $pump->id,
+            'nozzle_id' => $nozzle->id,
             'client_id' => $validated['client_id'] ?? null,
+            'vehicle_number' => $validated['vehicle_number'] ?? null,
             'credit_liters' => $validated['credit_liters'],
             'notes' => $validated['notes'] ?? null,
             'operation_type' => 'آجل',
             'total_amount' => $totalAmount,
         ]);
 
- // 🔹 حفظ الصورة باستخدام Spatie في فولدر public/uploads
-    if ($request->hasFile('image')) {
-        $transaction->addMediaFromRequest('image')->toMediaCollection('transactions', 'uploads'); // 'uploads' هو الـ disk الجديد
+        // 🔹 حفظ الصورة باستخدام Spatie في فولدر public
+        if ($request->hasFile('image')) {
+            $transaction->addMediaFromRequest('image')->toMediaCollection('transactions', 'public'); 
         }
 
         // 🔹 لو العملية تخص عميل آجل

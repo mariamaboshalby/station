@@ -9,6 +9,8 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TankController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\NozzleController;
+use App\Http\Controllers\NozzleCalculationController;
 use App\Models\Shift;
 
 /*
@@ -64,10 +66,13 @@ Route::middleware(['auth'])->group(function () {
 
     /** 🛢️ التانكات */
     Route::resource('tanks', TankController::class);
+    Route::get('/tanks-report/{id}', [TankController::class, 'report'])->name('tanks.report');
     Route::get('/tanks/{id}/add-capacity', [TankController::class, 'addCapacityForm'])->name('tanks.addCapacityForm');
     Route::post('/tanks/{id}/add-capacity', [TankController::class, 'addCapacity'])->name('tanks.addCapacity');
     Route::put('/tanks/{id}/updateAll', [TankController::class, 'updateAll'])->name('tanks.updateAll');
 
+    /** 🔫 المسدسات */
+    Route::patch('/nozzles/{id}/update-meter', [NozzleController::class, 'updateMeter'])->name('nozzles.updateMeter');
     /** 💰 العمليات (Transactions) */
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
@@ -77,11 +82,32 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/clients/search', [ClientController::class, 'search'])->name('clients.search');
     Route::resource('clients', ClientController::class);
     Route::get('/clients/{id}/transactions', [ClientController::class, 'transactions'])->name('clients.transactions');
+    Route::get('/clients/{id}/transactions/pdf', [ClientController::class, 'transactionsPdf'])->name('clients.transactions.pdf');
     Route::get('/clients/{id}/add-payment', [ClientController::class, 'addPaymentForm'])->name('clients.addPaymentForm');
     Route::post('/clients/{id}/add-payment', [ClientController::class, 'addPayment'])->name('clients.addPayment');
+    Route::patch('/clients/{id}/toggle-status', [ClientController::class, 'toggleStatus'])->name('clients.toggleStatus');
 
     Route::delete('/client_refuelings/{id}', [ClientRefuelingController::class, 'destroy'])
         ->name('client_refuelings.destroy');
+
+    /** 📊 التقارير المالية */
+    Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/revenues', [App\Http\Controllers\ReportController::class, 'revenues'])->name('reports.revenues');
+    
+    /** 💸 المصروفات */
+    Route::resource('expenses', App\Http\Controllers\ExpenseController::class);
+
+    /** 🏦 الصندوق اليومي (الخزنة) */
+    Route::get('/treasury', [\App\Http\Controllers\TreasuryController::class, 'index'])->name('treasury.index');
+    Route::post('/treasury', [\App\Http\Controllers\TreasuryController::class, 'store'])->name('treasury.store');
+    Route::delete('/treasury/{id}', [\App\Http\Controllers\TreasuryController::class, 'destroy'])->name('treasury.destroy');
+
+    /** 📦 الجرد */
+    Route::get('/inventory', [\App\Http\Controllers\InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('/inventory/create', [\App\Http\Controllers\InventoryController::class, 'create'])->name('inventory.create');
+    Route::post('/inventory', [\App\Http\Controllers\InventoryController::class, 'store'])->name('inventory.store');
+    Route::get('/inventory/report', [\App\Http\Controllers\InventoryController::class, 'report'])->name('inventory.report');
+    Route::get('/inventory/export', [\App\Http\Controllers\InventoryController::class, 'export'])->name('inventory.export');
 });
 
 require __DIR__ . '/auth.php';

@@ -7,7 +7,7 @@
                 <div class="card shadow-lg border-0 rounded-3">
                     @can('add user')
                         <div class="card-header bg-light text-center fs-5 fw-bold d-flex justify-content-between align-items-center">
-                            <span>قائمة المستخدمين</span>
+                            <span><i class="fas fa-users me-2"></i>قائمة المستخدمين</span>
                             <a href="{{ route('users.create') }}" class="btn btn-sm btn-success">
                                 <i class="fas fa-user-plus me-1"></i> إضافة موظف جديد
                             </a>
@@ -31,11 +31,11 @@
                         <table class="table table-hover table-striped text-center">
                             <thead class="table-light">
                                 <tr>
-                                    <th>#</th>
-                                    <th>الاسم</th>
-                                    <th>رقم التليفون</th>
-                                    <th>تاريخ الإضافة</th>
-                                    <th>اختيارات</th>
+                                    <th><i class="fas fa-hashtag"></i> #</th>
+                                    <th><i class="fas fa-user"></i> الاسم</th>
+                                    <th><i class="fas fa-phone"></i> رقم التليفون</th>
+                                    <th><i class="fas fa-calendar"></i> تاريخ الإضافة</th>
+                                    <th><i class="fas fa-cogs"></i> اختيارات</th>
                                 </tr>
                             </thead>
                             <tbody>

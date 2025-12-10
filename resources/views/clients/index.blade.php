@@ -26,6 +26,7 @@
                                 <th>المبلغ الكلي</th>
                                 <th>المبلغ المدفوع</th>
                                 <th>المبلغ المتبقي</th>
+                                <th>الحالة</th>
 
                                 @can('edit client')
                                     <th>إجراءات</th>
@@ -41,9 +42,30 @@
                                     <td>{{ $client->total_price }}</td>
                                     <td>{{ $client->amount_paid }}</td>
                                     <td>{{ $client->rest }}</td>
+                                    <td>
+                                        @if($client->is_active)
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle"></i> نشط
+                                            </span>
+                                        @else
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-ban"></i> معطل
+                                            </span>
+                                        @endif
+                                    </td>
 
                                     @can('edit client')
                                         <td class="d-flex justify-content-center gap-2">
+                                            {{-- زر تفعيل/تعطيل الحساب --}}
+                                            <form action="{{ route('clients.toggleStatus', $client->id) }}" method="POST"
+                                                onsubmit="return confirm('هل أنت متأكد من {{ $client->is_active ? 'تعطيل' : 'تفعيل' }} هذا الحساب؟');">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-{{ $client->is_active ? 'warning' : 'success' }} btn-sm">
+                                                    <i class="fas fa-{{ $client->is_active ? 'ban' : 'check-circle' }}"></i>
+                                                </button>
+                                            </form>
+
                                             {{-- زر إضافة دفعة --}}
                                             <x-button type="link" color="primary" size="sm" icon="plus"
                                                 label="إضافة دفعة" :href="route('clients.addPaymentForm', $client->id)" />
