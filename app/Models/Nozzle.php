@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Nozzle extends Model
 {
-    protected $fillable = ['pump_id', 'name'];
+    protected $fillable = ['pump_id', 'name', 'meter_reading'];
 
     public function pump()
     {
@@ -25,5 +25,10 @@ class Nozzle extends Model
             'pump_id',   // المفتاح في جدول nozzles
             'tank_id'    // المفتاح في جدول pumps
         );
+    }
+
+    public function readings()
+    {
+        return $this->hasMany(NozzleReading::class);
     }
 }

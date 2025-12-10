@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->decimal('total_price',10,2);
             $table->decimal( 'amount_paid',10,2);
             $table->decimal('rest',10,2);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

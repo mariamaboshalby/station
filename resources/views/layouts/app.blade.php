@@ -16,8 +16,8 @@
 
     <!-- Google Fonts - Tajawal -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
-<!-- CSS -->
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 
     <style>
         :root {
@@ -107,6 +107,30 @@
 
             .main-content.shifted {
                 width: 100%;
+            }
+        }
+
+        /* Responsive Tables */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+            
+            .card-body {
+                padding: 1rem !important;
+            }
+            
+            .btn {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+            }
+            
+            h1, h2, h3 {
+                font-size: 1.5rem !important;
+            }
+            
+            .col-md-2, .col-md-3, .col-md-4 {
+                margin-bottom: 1rem;
             }
         }
 

@@ -7,7 +7,7 @@
 
                 <div class="card shadow-lg border-0 rounded-3">
                     <div class="card-header bg-light text-center fs-5 fw-bold d-flex justify-content-between align-items-center">
-                        <span>قائمة الشيفتات</span>
+                        <span><i class="fas fa-clock me-2"></i>قائمة الشيفتات</span>
                         @can('open shift')
                             <x-button type="link" color="success" size="sm" icon="plus-circle" label="فتح شيفت جديد"
                                 :href="route('shifts.create')" />
@@ -21,14 +21,14 @@
                         <table class="table table-hover table-striped text-center">
                             <thead class="table-light">
                                 <tr>
-                                    <th>#</th>
-                                    <th>الموظف</th>
-                                    <th>العداد في بدايه الشيفت</th>
-                                    <th>صوره العداد في بديه الشيفت</th>
-                                    <th>بداية الشيفت</th>
-                                    <th>نهاية الشيفت</th>
-                                    <th>مطابق</th>
-                                    <th>خيارات</th>
+                                    <th><i class="fas fa-hashtag"></i> #</th>
+                                    <th><i class="fas fa-user"></i> الموظف</th>
+                                    <th><i class="fas fa-tachometer-alt"></i> العداد في بدايه الشيفت</th>
+                                    <th><i class="fas fa-camera"></i> صوره العداد في بديه الشيفت</th>
+                                    <th><i class="fas fa-play-circle"></i> بداية الشيفت</th>
+                                    <th><i class="fas fa-stop-circle"></i> نهاية الشيفت</th>
+                                    <th><i class="fas fa-check-circle"></i> مطابق</th>
+                                    <th><i class="fas fa-cogs"></i> خيارات</th>
                                 </tr>
                             </thead>
                             <tbody>

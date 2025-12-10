@@ -4,13 +4,6 @@
         <button class="btn btn-outline-secondary d-lg-none me-2" id="sidebarToggle">
             <i class="fas fa-bars"></i>
         </button>
-        <div class="text-center">
-            <p>
-                <i class="fas fa-coins"></i>
-                رأس المال:
-                <span class="badge bg-success">{{ number_format($capital, 2) }} جنيه</span>
-            </p>
-        </div>
         <ul class="navbar-nav ms-auto">
 
             <li class="nav-item">

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Pump;
 use App\Models\Transaction;
+use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
+use Mpdf\Mpdf;
 
 class ClientController extends Controller
 {
@@ -135,6 +137,16 @@ public function update(Request $request, $id)
         $client->rest = $client->amount_paid - $client->total_price;
         $client->save();
 
+        // تسجيل الدفعة كإيراد في الخزنة
+        TreasuryTransaction::create([
+            'type' => 'income',
+            'category' => 'دفعة عميل',
+            'amount' => $request->added_amount,
+            'description' => 'دفعة من العميل: ' . $client->name,
+            'transaction_date' => now(),
+            'user_id' => auth()->id(),
+        ]);
+
         return redirect()->route('clients.index')->with('success', 'تمت إضافة المبلغ بنجاح.');
     }
 
@@ -143,6 +155,7 @@ public function update(Request $request, $id)
         $term = $request->get('term');
 
         $clients = Client::query()
+            ->where('is_active', true)
             ->where('name', 'LIKE', "%{$term}%")
             ->take(10)
             ->get(['id', 'name']);
@@ -154,5 +167,35 @@ public function update(Request $request, $id)
     {
         $client = Client::findOrFail($id);
         return response()->json($client);
+    }
+
+    // تفعيل/تعطيل حساب العميل
+    public function toggleStatus($id)
+    {
+        $client = Client::findOrFail($id);
+        
+        // تبديل الحالة
+        $client->is_active = !$client->is_active;
+        $client->save();
+
+        $status = $client->is_active ? 'تم تفعيل' : 'تم تعطيل';
+        
+        return redirect()->route('clients.index')
+            ->with('success', $status . ' حساب العميل بنجاح');
+    }
+
+    public function transactionsPdf($id)
+    {
+        $client = Client::findOrFail($id);
+        $transactions = $client->refuelings()
+            ->with(['shift.user', 'transaction.nozzle'])
+            ->get();
+        
+        $html = view('clients.transactions-pdf', compact('client', 'transactions'))->render();
+        
+        $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4']);
+        $mpdf->WriteHTML($html);
+        
+        return $mpdf->Output('client_' . $client->id . '_' . now()->format('Y-m-d') . '.pdf', 'D');
     }
 }

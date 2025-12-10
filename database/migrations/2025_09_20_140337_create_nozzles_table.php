@@ -14,6 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('pump_id')->constrained()->cascadeOnDelete(); // كل مسدس مرتبط بطلمبة
             $table->string('name'); // اسم المسدس (Nozzle A, Nozzle B)
+            $table->decimal('meter_reading', 10, 2)->default(0); // قراءة العداد للمسدس
+          
             $table->timestamps();
         });
 

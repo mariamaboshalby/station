@@ -72,15 +72,14 @@
                                     <input type="text" class="form-control text-center bg-light" value="آجل" readonly>
                                 </div>
 
-                                {{-- الطلمبة --}}
+                                {{-- المسدس --}}
                                 <div class="mb-3">
-                                    <label for="pump_id" class="form-label fw-bold">الطلمبة</label>
-                                    <select name="pump_id" id="pump_id" class="form-select" required>
-
-                                        @foreach ($pumps as $pump)
-                                            <option value="{{ $pump->id }}">
-                                                {{ $pump->name }} - تانك {{ $pump->tank->name }} -
-                                                {{ $pump->tank->fuel->name }}
+                                    <label for="nozzle_id" class="form-label fw-bold">المسدس (الطلمبة)</label>
+                                    <select name="nozzle_id" id="nozzle_id" class="form-select" required>
+                                        <option value="">-- اختر المسدس المستخدم --</option>
+                                        @foreach ($nozzles as $nozzle)
+                                            <option value="{{ $nozzle->id }}">
+                                                {{ $nozzle->name }} - {{ $nozzle->pump->name }} ({{ $nozzle->pump->tank->fuel->name }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -91,6 +90,12 @@
                                     <select id="client_id" name="client_id" class="form-select" placeholder="ابحث عن العميل...">
                                         <option value="">-- اختر العميل --</option>
                                     </select>
+                                </div>
+
+                                {{-- رقم العربية --}}
+                                <div class="mb-3">
+                                    <label for="vehicle_number" class="form-label fw-bold">رقم العربية</label>
+                                    <input type="text" name="vehicle_number" id="vehicle_number" class="form-control text-center" placeholder="مثال: أ ب ج 1234">
                                 </div>
 
 

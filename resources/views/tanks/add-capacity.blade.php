@@ -21,8 +21,21 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">الكمية المضافة</label>
-                        <input type="number" name="amount" class="form-control" min="1" required>
+                        <label class="form-label font-bold">الكمية المضافة (لتر)</label>
+                        <input type="number" step="0.01" name="amount" class="form-control fw-bold" min="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-bold">سعر الشراء / لتر (التكلفة)</label>
+                        <input type="number" step="0.01" name="cost_per_liter" class="form-control" placeholder="0.00">
+                        <div class="form-text text-muted">اتركه فارغاً إذا كنت لا تريد تسجيل تكلفة مالية.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch p-0">
+                            <label class="form-check-label fw-bold ms-5" for="deduct_from_treasury">خصم المبلغ من الخزنة (تسجيل كمصروف)</label>
+                            <input class="form-check-input float-end ms-2" type="checkbox" name="deduct_from_treasury" id="deduct_from_treasury" checked style="margin-right: -2.5em;"> 
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-success">
