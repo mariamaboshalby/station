@@ -32,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('capital', $capital);
         });
-    }
 
+        // 🟢 تسجيل المراقبين (Observers)
+        \App\Models\Pump::observe(\App\Observers\PumpObserver::class);
+    }
 }

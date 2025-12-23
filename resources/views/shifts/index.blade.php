@@ -36,7 +36,7 @@
                                     <tr>
                                         <td>{{ $shift->id }}</td>
                                         <td>{{ $shift->user->name ?? '---' }}</td>
-                                        <td>{{ $shift->meter_reading ?? '---' }}</td>
+                                        <td>{{ $shift->nozzleReadings->sum('start_reading') }}</td>
                                         <td>
                                             <a href="{{ $shift->getFirstMediaUrl('start_meter_images') }}" target="_blank">
                                                 <img src="{{ $shift->getFirstMediaUrl('start_meter_images') }}"

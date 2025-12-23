@@ -36,7 +36,6 @@ class TankController extends Controller
             'tank_name' => 'required|string|max:255',
             'capacity' => 'required|numeric|min:1',
             'pump_count' => 'required|integer|min:1',
-            'nozzles_per_pump' => 'required|integer|min:1',
             'fuel_id' => 'required|exists:fuels,id',
         ]);
 
@@ -47,19 +46,12 @@ class TankController extends Controller
             'fuel_id' => $request->fuel_id,
         ]);
 
-        // 2- pumps + nozzles
+        // 2- انشاء الطلمبات فقط بدون مسدسات
         for ($i = 1; $i <= $request->pump_count; $i++) {
-            $pump = Pump::create([
+            Pump::create([
                 'tank_id' => $tank->id,
-                'name' => "طلمبه $i",
+                'name' => "طلمبة $i",
             ]);
-
-            for ($j = 1; $j <= $request->nozzles_per_pump; $j++) {
-                Nozzle::create([
-                    'pump_id' => $pump->id,
-                    'name' => "مسدس $j",
-                ]);
-            }
         }
 
         return redirect()->route('tanks.index')->with('success', 'تم إنشاء التانك والطلمبات والمسدسات بنجاح ✅');
@@ -154,5 +146,33 @@ class TankController extends Controller
         $tank->delete();
 
         return redirect()->route('tanks.index')->with('success', '🗑️ تم حذف التانك وكل متعلقاته بنجاح.');
+    }
+
+    // إضافة مسدس جديد لطلمبة محددة
+    public function storeNozzle(Request $request, $pumpId)
+    {
+        $pump = Pump::findOrFail($pumpId);
+        
+        $request->validate([
+            'nozzle_name' => 'required|string|max:255',
+            'meter_reading' => 'required|numeric|min:0',
+        ]);
+
+        Nozzle::create([
+            'pump_id' => $pump->id,
+            'name' => $request->nozzle_name,
+            'meter_reading' => $request->meter_reading,
+        ]);
+
+        return redirect()->back()->with('success', 'تم إضافة المسدس بنجاح ✅');
+    }
+    
+    // حذف مسدس
+    public function destroyNozzle($id)
+    {
+        $nozzle = Nozzle::findOrFail($id);
+        $nozzle->delete();
+        
+        return redirect()->back()->with('success', 'تم حذف المسدس بنجاح 🗑️');
     }
 }

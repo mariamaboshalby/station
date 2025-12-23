@@ -70,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tanks/{id}/add-capacity', [TankController::class, 'addCapacityForm'])->name('tanks.addCapacityForm');
     Route::post('/tanks/{id}/add-capacity', [TankController::class, 'addCapacity'])->name('tanks.addCapacity');
     Route::put('/tanks/{id}/updateAll', [TankController::class, 'updateAll'])->name('tanks.updateAll');
+    Route::post('/tanks/pumps/{id}/nozzles', [TankController::class, 'storeNozzle'])->name('tanks.storeNozzle');
+    Route::delete('/tanks/nozzles/{id}', [TankController::class, 'destroyNozzle'])->name('tanks.destroyNozzle');
 
     /** 🔫 المسدسات */
     Route::patch('/nozzles/{id}/update-meter', [NozzleController::class, 'updateMeter'])->name('nozzles.updateMeter');

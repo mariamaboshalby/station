@@ -52,11 +52,17 @@
                             الطلمبات والمسدسات ({{ $tank->pumps->count() }} طلمبة)
                         </h5>
 
-                        @foreach($tank->pumps as $pump)
+                        @foreach ($tank->pumps as $pump)
                             <div class="mb-4">
-                                <h6 class="bg-primary text-white p-2 rounded">
-                                    <i class="fas fa-cog"></i>
-                                    {{ $pump->name }} - عدد المسدسات: {{ $pump->nozzles->count() }}
+                                <h6 class="bg-primary text-white p-2 rounded d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-cog"></i>
+                                        {{ $pump->name }} - عدد المسدسات: {{ $pump->nozzles->count() }}
+                                    </span>
+                                    <button class="btn btn-sm btn-light text-primary" data-bs-toggle="modal"
+                                        data-bs-target="#addNozzleModal{{ $pump->id }}">
+                                        <i class="fas fa-plus"></i> إضافة مسدس
+                                    </button>
                                 </h6>
 
                                 <div class="table-responsive">
@@ -65,7 +71,8 @@
                                             <tr>
                                                 <th style="width: 10%;"><i class="fas fa-hashtag"></i> #</th>
                                                 <th style="width: 30%;"><i class="fas fa-fill-drip"></i> اسم المسدس</th>
-                                                <th style="width: 30%;"><i class="fas fa-tachometer-alt"></i> قراءة العداد (لتر)</th>
+                                                <th style="width: 30%;"><i class="fas fa-tachometer-alt"></i> قراءة العداد (لتر)
+                                                </th>
                                                 <th style="width: 30%;"><i class="fas fa-cogs"></i> إجراءات</th>
                                             </tr>
                                         </thead>
@@ -80,16 +87,26 @@
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <button type="button" class="btn btn-sm btn-primary" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#updateMeterModal{{ $nozzle->id }}">
-                                                            <i class="fas fa-edit"></i> تحديث القراءة
+                                                        <button type="button" class="btn btn-sm btn-primary"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#updateMeterModal{{ $nozzle->id }}">
+                                                            <i class="fas fa-edit"></i> تحديث
                                                         </button>
+                                                        <form action="{{ route('tanks.destroyNozzle', $nozzle->id) }}"
+                                                            method="POST" class="d-inline"
+                                                            onsubmit="return confirm('هل أنت متأكد من حذف هذا المسدس؟')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-trash"></i> حذف
+                                                            </button>
+                                                        </form>
                                                     </td>
                                                 </tr>
 
                                                 <!-- Update Meter Reading Modal -->
-                                                <div class="modal fade" id="updateMeterModal{{ $nozzle->id }}" tabindex="-1">
+                                                <div class="modal fade" id="updateMeterModal{{ $nozzle->id }}"
+                                                    tabindex="-1">
                                                     <div class="modal-dialog modal-dialog-centered">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-primary text-white">
@@ -97,9 +114,11 @@
                                                                     <i class="fas fa-tachometer-alt"></i>
                                                                     تحديث قراءة العداد - {{ $nozzle->name }}
                                                                 </h5>
-                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                                <button type="button" class="btn-close btn-close-white"
+                                                                    data-bs-dismiss="modal"></button>
                                                             </div>
-                                                            <form action="{{ route('nozzles.updateMeter', $nozzle->id) }}" method="POST">
+                                                            <form action="{{ route('nozzles.updateMeter', $nozzle->id) }}"
+                                                                method="POST">
                                                                 @csrf
                                                                 @method('PATCH')
                                                                 <div class="modal-body">
@@ -110,21 +129,22 @@
 
                                                                     <div class="mb-3">
                                                                         <label class="form-label">القراءة الحالية:</label>
-                                                                        <input type="text" class="form-control" 
-                                                                               value="{{ number_format($nozzle->meter_reading ?? 0, 2) }} لتر" 
-                                                                               readonly>
+                                                                        <input type="text" class="form-control"
+                                                                            value="{{ number_format($nozzle->meter_reading ?? 0, 2) }} لتر"
+                                                                            readonly>
                                                                     </div>
-                                                                    
+
                                                                     <div class="mb-3">
-                                                                        <label class="form-label">القراءة الجديدة: <span class="text-danger">*</span></label>
-                                                                        <input type="number" step="0.01" name="meter_reading" 
-                                                                               class="form-control" 
-                                                                               value="{{ $nozzle->meter_reading ?? 0 }}" 
-                                                                               required>
+                                                                        <label class="form-label">القراءة الجديدة: <span
+                                                                                class="text-danger">*</span></label>
+                                                                        <input type="number" step="0.01"
+                                                                            name="meter_reading" class="form-control"
+                                                                            value="{{ $nozzle->meter_reading ?? 0 }}" required>
                                                                     </div>
                                                                 </div>
                                                                 <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                                    <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">
                                                                         <i class="fas fa-times"></i> إلغاء
                                                                     </button>
                                                                     <button type="submit" class="btn btn-primary">
@@ -147,11 +167,51 @@
                                             <tr>
                                                 <td colspan="2"><strong>الإجمالي</strong></td>
                                                 <td colspan="2">
-                                                    <strong>{{ number_format($pump->nozzles->sum('meter_reading'), 2) }} لتر</strong>
+                                                    <strong>{{ number_format($pump->nozzles->sum('meter_reading'), 2) }}
+                                                        لتر</strong>
                                                 </td>
                                             </tr>
                                         </tfoot>
                                     </table>
+                                </div>
+                            </div>
+
+                            <!-- Add Nozzle Modal -->
+                            <div class="modal fade" id="addNozzleModal{{ $pump->id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-success text-white">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-plus-circle"></i> إضافة مسدس جديد - {{ $pump->name }}
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{{ route('tanks.storeNozzle', $pump->id) }}" method="POST">
+                                            @csrf
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">اسم المسدس <span
+                                                            class="text-danger">*</span></label>
+                                                    <input type="text" name="nozzle_name" class="form-control"
+                                                        placeholder="مثال: مسدس 1" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">قراءة العداد الحالية <span
+                                                            class="text-danger">*</span></label>
+                                                    <input type="number" step="0.01" name="meter_reading"
+                                                        class="form-control" value="0" min="0" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">إلغاء</button>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-save"></i> حفظ المسدس
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -176,13 +236,14 @@
                                         <td>
                                             <strong>إجمالي المسدسات</strong><br>
                                             <span class="badge bg-success fs-5">
-                                                {{ $tank->pumps->sum(function($p) { return $p->nozzles->count(); }) }}
+                                                {{ $tank->pumps->sum(function ($p) {return $p->nozzles->count();}) }}
                                             </span>
                                         </td>
                                         <td>
                                             <strong>إجمالي قراءات العدادات</strong><br>
                                             <span class="badge bg-info fs-5">
-                                                {{ number_format($tank->pumps->sum(function($p) { return $p->nozzles->sum('meter_reading'); }), 2) }} لتر
+                                                {{ number_format($tank->pumps->sum(function ($p) {return $p->nozzles->sum('meter_reading');}),2) }}
+                                                لتر
                                             </span>
                                         </td>
                                     </tr>

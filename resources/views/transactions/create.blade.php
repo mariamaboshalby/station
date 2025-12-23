@@ -79,7 +79,8 @@
                                         <option value="">-- اختر المسدس المستخدم --</option>
                                         @foreach ($nozzles as $nozzle)
                                             <option value="{{ $nozzle->id }}">
-                                                {{ $nozzle->name }} - {{ $nozzle->pump->name }} ({{ $nozzle->pump->tank->fuel->name }})
+                                                {{ $nozzle->name }} - {{ $nozzle->pump->name }}
+                                                ({{ $nozzle->pump->tank->fuel->name }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -95,7 +96,8 @@
                                 {{-- رقم العربية --}}
                                 <div class="mb-3">
                                     <label for="vehicle_number" class="form-label fw-bold">رقم العربية</label>
-                                    <input type="text" name="vehicle_number" id="vehicle_number" class="form-control text-center" placeholder="مثال: أ ب ج 1234">
+                                    <input type="text" name="vehicle_number" id="vehicle_number"
+                                        class="form-control text-center" placeholder="مثال: أ ب ج 1234">
                                 </div>
 
 
