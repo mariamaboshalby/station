@@ -22,41 +22,52 @@
                         @endif
 
                         {{-- Filter Form --}}
-                        <form action="{{ route('transactions.index') }}" method="GET" class="mb-4 bg-light p-3 rounded shadow-sm border">
+                        <form action="{{ route('transactions.index') }}" method="GET"
+                            class="mb-4 bg-light p-3 rounded shadow-sm border">
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label for="client_id" class="form-label fw-bold text-primary"><i class="fas fa-user-tie me-1"></i>العميل</label>
+                                    <label for="client_id" class="form-label fw-bold text-primary"><i
+                                            class="fas fa-user-tie me-1"></i>العميل</label>
                                     <select name="client_id" id="client_id" class="form-select">
                                         <option value="">كل العملاء</option>
-                                        @foreach($clients as $client)
-                                            <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                                        @foreach ($clients as $client)
+                                            <option value="{{ $client->id }}"
+                                                {{ request('client_id') == $client->id ? 'selected' : '' }}>
                                                 {{ $client->name }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-3">
-                                    <label for="user_id" class="form-label fw-bold text-primary"><i class="fas fa-user me-1"></i>الموظف</label>
+                                    <label for="user_id" class="form-label fw-bold text-primary"><i
+                                            class="fas fa-user me-1"></i>الموظف</label>
                                     <select name="user_id" id="user_id" class="form-select">
                                         <option value="">كل الموظفين</option>
-                                        @foreach($users as $user)
-                                            <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                        @foreach ($users as $user)
+                                            <option value="{{ $user->id }}"
+                                                {{ request('user_id') == $user->id ? 'selected' : '' }}>
                                                 {{ $user->name }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-2">
-                                    <label for="from_date" class="form-label fw-bold text-primary"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
-                                    <input type="date" name="from_date" id="from_date" class="form-control" value="{{ request('from_date') }}">
+                                    <label for="from_date" class="form-label fw-bold text-primary"><i
+                                            class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
+                                    <input type="date" name="from_date" id="from_date" class="form-control"
+                                        value="{{ request('from_date') }}">
                                 </div>
                                 <div class="col-md-2">
-                                    <label for="to_date" class="form-label fw-bold text-primary"><i class="fas fa-calendar-alt me-1"></i>إلى تاريخ</label>
-                                    <input type="date" name="to_date" id="to_date" class="form-control" value="{{ request('to_date') }}">
+                                    <label for="to_date" class="form-label fw-bold text-primary"><i
+                                            class="fas fa-calendar-alt me-1"></i>إلى تاريخ</label>
+                                    <input type="date" name="to_date" id="to_date" class="form-control"
+                                        value="{{ request('to_date') }}">
                                 </div>
                                 <div class="col-md-2 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-primary w-100 me-2"><i class="fas fa-filter"></i> تصفية</button>
-                                    <a href="{{ route('transactions.index') }}" class="btn btn-secondary w-100"><i class="fas fa-undo"></i> إعادة</a>
+                                    <button type="submit" class="btn btn-primary w-100 me-2"><i class="fas fa-filter"></i>
+                                        تصفية</button>
+                                    <a href="{{ route('transactions.index') }}" class="btn btn-secondary w-100"><i
+                                            class="fas fa-undo"></i> إعادة</a>
                                 </div>
                             </div>
                         </form>
@@ -70,7 +81,8 @@
                                     <th><i class="fas fa-clock"></i> اللترات الآجل</th>
                                     <th><i class="fas fa-money-bill-wave"></i> اللترات كاش</th>
                                     <th><i class="fas fa-calculator"></i> إجمالي السعر</th>
-                                    <th><i class="fas fa-image"></i> الصورة</th>
+                                    <th><i class="fas fa-image"></i> صورة العملية</th>
+                                    <th><i class="fas fa-camera"></i> صورة إغلاق الشيفت</th>
                                     <th><i class="fas fa-sticky-note"></i> ملاحظات</th>
                                     <th><i class="fas fa-calendar"></i> تاريخ العملية</th>
                                 </tr>
@@ -97,12 +109,24 @@
                                                 -
                                             @endif
                                         </td>
+                                        <td>
+                                            @if ($transaction->shift && $transaction->shift->hasMedia('end_meter_images'))
+                                                <a href="{{ $transaction->shift->getFirstMediaUrl('end_meter_images') }}"
+                                                    target="_blank">
+                                                    <img src="{{ $transaction->shift->getFirstMediaUrl('end_meter_images') }}"
+                                                        alt="صورة إغلاق الشيفت" width="100" height="80"
+                                                        style="object-fit: cover;">
+                                                </a>
+                                            @else
+                                                <span class="badge bg-warning">لم يُغلق الشيفت</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $transaction->notes ?? '-' }}</td>
                                         <td>{{ $transaction->created_at->format('Y-m-d H:i') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">لا توجد عمليات حتى الآن</td>
+                                        <td colspan="10" class="text-center">لا توجد عمليات حتى الآن</td>
                                     </tr>
                                 @endforelse
                             </tbody>

@@ -15,7 +15,7 @@ class ShiftController extends Controller
     // عرض كل الشيفتات
     public function index()
     {
-        $shifts = Shift::with('user')->latest()->paginate();
+        $shifts = Shift::with(['user', 'nozzleReadings'])->latest()->paginate();
         return view('shifts.index', compact('shifts'));
     }
 
