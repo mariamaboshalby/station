@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\InventoryExport;
+use Mpdf\Mpdf;
 
 class InventoryController extends Controller
 {
@@ -87,9 +88,17 @@ class InventoryController extends Controller
 
     public function report(Request $request)
     {
-        $type = $request->input('type', 'daily');
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+        $type = $request->input('type', 'monthly');
+        
+        if ($type === 'monthly') {
+            // Auto-set to first day to last day of current month
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+        } else {
+            // Daily or custom range
+            $startDate = $request->input('start_date', Carbon::now()->toDateString());
+            $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        }
 
         $inventories = Inventory::with(['tank.fuel', 'user'])
             ->where('type', $type)
@@ -102,9 +111,18 @@ class InventoryController extends Controller
 
     public function export(Request $request)
     {
-        $type = $request->input('type', 'daily');
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+        $type = $request->input('type', 'monthly');
+        
+        if ($type === 'monthly') {
+            // Auto-set to first day to last day of current month
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+        } else {
+            // Daily or custom range
+            $startDate = $request->input('start_date', Carbon::now()->toDateString());
+            $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        }
+        $exportType = $request->input('export_type', 'excel');
 
         $inventories = Inventory::with(['tank.fuel', 'user'])
             ->where('type', $type)
@@ -112,6 +130,23 @@ class InventoryController extends Controller
             ->orderBy('inventory_date', 'desc')
             ->get();
 
-        return Excel::download(new InventoryExport($inventories), 'inventory_' . $startDate . '_' . $endDate . '.xlsx');
+        if ($exportType == 'pdf') {
+            $data = [
+                'inventories' => $inventories,
+                'type' => $type,
+                'startDate' => $startDate,
+                'endDate' => $endDate
+            ];
+            
+            $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4', 'orientation' => 'P', 'autoScriptToLang' => true, 'autoLangToFont' => true]);
+            $html = view('inventory.report-pdf', $data)->render();
+            $mpdf->WriteHTML($html);
+            
+            return response($mpdf->Output('', 'S'))
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="inventory_report_' . $startDate . '_' . $endDate . '.pdf"');
+        } else {
+            return Excel::download(new InventoryExport($inventories), 'inventory_' . $startDate . '_' . $endDate . '.xlsx');
+        }
     }
 }

@@ -8,6 +8,8 @@ use App\Models\Transaction;
 use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
 use Mpdf\Mpdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ClientTransactionsExport;
 
 class ClientController extends Controller
 {
@@ -197,5 +199,15 @@ public function update(Request $request, $id)
         $mpdf->WriteHTML($html);
         
         return $mpdf->Output('client_' . $client->id . '_' . now()->format('Y-m-d') . '.pdf', 'D');
+    }
+
+    public function transactionsExcel($id)
+    {
+        $client = Client::findOrFail($id);
+        $transactions = $client->refuelings()
+            ->with(['shift.user', 'transaction.nozzle.pump.tank.fuel'])
+            ->get();
+        
+        return Excel::download(new ClientTransactionsExport($client, $transactions), 'client_transactions_' . $client->id . '_' . now()->format('Y-m-d') . '.xlsx');
     }
 }

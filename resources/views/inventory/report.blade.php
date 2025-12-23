@@ -5,13 +5,27 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-1"> تقرير الجرد اليومي</h2>
-            <p class="text-muted">تحليل الفروقات والمخزون</p>
+            <h2 class="fw-bold text-dark mb-1"> تقرير الجرد {{ $type == 'monthly' ? 'الشهري' : 'اليومي' }}</h2>
+            <p>{{ $type == 'monthly' ? 'تحليل الفروقات والمخزون الشهري (تلقائي من أول الشهر لآخره)' : 'تحليل الفروقات والمخزون اليومي' }}</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('inventory.export', ['type' => $type, 'start_date' => $startDate, 'end_date' => $endDate]) }}" class="btn btn-success px-4 rounded-pill">
-                <i class="fas fa-file-excel me-2"></i> تصدير Excel
-            </a>
+            <div class="dropdown">
+                <button class="btn btn-success dropdown-toggle px-4 rounded-pill" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-file-export me-2"></i> تصدير
+                </button>
+                <ul class="dropdown-menu text-end">
+                    <li>
+                        <a class="dropdown-item" href="{{ route('inventory.export', array_merge(['export_type' => 'pdf'], request()->all())) }}">
+                            <i class="fas fa-file-pdf text-danger me-2"></i> تصدير PDF
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('inventory.export', array_merge(['export_type' => 'excel'], request()->all())) }}">
+                            <i class="fas fa-file-excel text-success me-2"></i> تصدير Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
             <button onclick="window.print()" class="btn btn-dark px-4 rounded-pill">
                 <i class="fas fa-print me-2"></i> طباعة
             </button>
@@ -21,16 +35,22 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
             <form action="{{ route('inventory.report') }}" method="GET" class="row g-3">
-                <input type="hidden" name="type" value="daily">
-                <div class="col-md-5">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">نوع التقرير</label>
+                    <select name="type" class="form-select" id="reportType">
+                        <option value="monthly" {{ $type == 'monthly' ? 'selected' : '' }}>شهري (تلقائي)</option>
+                        <option value="daily" {{ $type == 'daily' ? 'selected' : '' }}>يومي</option>
+                    </select>
+                </div>
+                <div class="col-md-3" id="startDateField">
                     <label class="form-label fw-bold">من تاريخ</label>
-                    <input type="date" name="start_date" value="{{ $startDate }}" class="form-control">
+                    <input type="date" name="start_date" value="{{ $startDate }}" class="form-control" id="startDate">
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-3" id="endDateField">
                     <label class="form-label fw-bold">إلى تاريخ</label>
-                    <input type="date" name="end_date" value="{{ $endDate }}" class="form-control">
+                    <input type="date" name="end_date" value="{{ $endDate }}" class="form-control" id="endDate">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label fw-bold">&nbsp;</label>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-filter me-2"></i> تحديث
@@ -39,6 +59,46 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportType = document.getElementById('reportType');
+            const startDateField = document.getElementById('startDateField');
+            const endDateField = document.getElementById('endDateField');
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+
+            function updateDateFields() {
+                if (reportType.value === 'monthly') {
+                    // Auto-set monthly dates
+                    const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    
+                    startDate.value = firstDay.toISOString().split('T')[0];
+                    endDate.value = lastDay.toISOString().split('T')[0];
+                    
+                    // Disable manual editing for monthly
+                    startDate.disabled = true;
+                    endDate.disabled = true;
+                } else {
+                    // Enable manual editing for daily
+                    startDate.disabled = false;
+                    endDate.disabled = false;
+                    
+                    // Set to today if no date selected
+                    if (!startDate.value) {
+                        const today = new Date().toISOString().split('T')[0];
+                        startDate.value = today;
+                        endDate.value = today;
+                    }
+                }
+            }
+
+            reportType.addEventListener('change', updateDateFields);
+            updateDateFields(); // Initialize on page load
+        });
+    </script>
 
     <div class="row g-4 mb-4">
         <div class="col-md-4">
