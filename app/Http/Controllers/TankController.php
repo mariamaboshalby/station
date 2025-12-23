@@ -8,6 +8,9 @@ use App\Models\Pump;
 use App\Models\Nozzle;
 use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
+use Mpdf\Mpdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TankReportExport;
 
 class TankController extends Controller
 {
@@ -87,7 +90,7 @@ class TankController extends Controller
 
     public function addCapacityForm($id)
     {
-        $tank = Tank::findOrFail($id);
+        $tank = Tank::with('fuel')->findOrFail($id);
         return view('tanks.add-capacity', compact('tank'));
     }
 
@@ -105,27 +108,41 @@ class TankController extends Controller
             return redirect()->back()->with('error', '⚠️ الكمية أكبر من السعة الكلية للتانك.');
         }
 
-        // 1. حساب المصروف وإضافته للخزنة إذا لزم الأمر
-        if ($request->has('deduct_from_treasury') && $request->cost_per_liter > 0) {
-            $totalCost = $request->amount * $request->cost_per_liter;
+        // 1. حساب المصروف وإضافته للخزنة (إذا تم تفعيل الخيار وإدخال السعر)
+        $expenseRecorded = false;
+        
+        if ($request->has('deduct_from_treasury')) {
+            $costPerLiter = $request->cost_per_liter ?? 0;
             
-            TreasuryTransaction::create([
-                'user_id' => auth()->id(), // المستخدم الحالي
-                'type' => 'expense',
-                'category' => 'شراء وقود (تفريغ تانك)',
-                'amount' => $totalCost,
-                'transaction_date' => now(),
-                'description' => "تفريغ حمولة {$request->amount} لتر في {$tank->name} (سعر اللتر {$request->cost_per_liter})",
-            ]);
+            if ($costPerLiter > 0) {
+                $totalCost = $request->amount * $costPerLiter;
+                
+                TreasuryTransaction::create([
+                    'user_id' => auth()->id(),
+                    'type' => 'expense',
+                    'category' => 'شراء وقود (تفريغ تانك)',
+                    'amount' => $totalCost,
+                    'transaction_date' => now(),
+                    'description' => "تفريغ {$request->amount} لتر في {$tank->name} × {$costPerLiter} ج.م",
+                ]);
+                
+                $expenseRecorded = true;
+            }
         }
 
         // 2. تحديث التانك
         $tank->current_level += $request->amount;
         $tank->save();
         
-        $msg = '✅ تم إضافة الكمية للتانك بنجاح.';
-        if($request->has('deduct_from_treasury') && $request->cost_per_liter > 0) {
-            $msg .= ' وتم تسجيل المصروف في الخزنة.';
+        // 3. رسالة النجاح
+        if ($expenseRecorded) {
+            $msg = '✅ تم إضافة ' . number_format($request->amount, 2) . ' لتر للتانك وتسجيل المصروف في الخزنة.';
+        } else {
+            if ($request->has('deduct_from_treasury') && !$request->cost_per_liter) {
+                $msg = '✅ تم إضافة الكمية للتانك. ⚠️ لم يتم تسجيل مصروف (السعر غير محدد).';
+            } else {
+                $msg = '✅ تم إضافة الكمية للتانك بنجاح.';
+            }
         }
 
         return redirect()->route('tanks.index')->with('success', $msg);
@@ -167,6 +184,26 @@ class TankController extends Controller
         return redirect()->back()->with('success', 'تم إضافة المسدس بنجاح ✅');
     }
     
+    public function reportPdf($id)
+    {
+        $tank = Tank::with(['fuel', 'pumps.nozzles'])->findOrFail($id);
+        
+        $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4', 'orientation' => 'P', 'autoScriptToLang' => true, 'autoLangToFont' => true]);
+        $html = view('tanks.report-pdf', compact('tank'))->render();
+        $mpdf->WriteHTML($html);
+        
+        return response($mpdf->Output('', 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="tank_report_' . $tank->id . '_' . now()->format('Y-m-d') . '.pdf"');
+    }
+
+    public function reportExcel($id)
+    {
+        $tank = Tank::with(['fuel', 'pumps.nozzles'])->findOrFail($id);
+        
+        return Excel::download(new TankReportExport($tank), 'tank_report_' . $tank->id . '_' . now()->format('Y-m-d') . '.xlsx');
+    }
+
     // حذف مسدس
     public function destroyNozzle($id)
     {

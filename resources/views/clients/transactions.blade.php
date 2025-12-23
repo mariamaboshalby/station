@@ -7,9 +7,23 @@
                 <h3 class="text-primary fw-bold mb-0">
                     حساب العميل: {{ $client->name }}
                 </h3>
-                <a href="{{ route('clients.transactions.pdf', $client->id) }}" class="btn btn-danger">
-                    <i class="fas fa-file-pdf me-2"></i> تصدير PDF
-                </a>
+                <div class="dropdown">
+                    <button class="btn btn-danger dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-file-export me-2"></i> تصدير
+                    </button>
+                    <ul class="dropdown-menu text-end">
+                        <li>
+                            <a class="dropdown-item" href="{{ route('clients.transactions.pdf', $client->id) }}">
+                                <i class="fas fa-file-pdf text-danger me-2"></i> تصدير PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ route('clients.transactions.excel', $client->id) }}">
+                                <i class="fas fa-file-excel text-success me-2"></i> تصدير Excel
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
 
             <div class="card shadow overflow-x-auto">

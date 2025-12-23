@@ -13,9 +13,28 @@
                                 <i class="fas fa-gas-pump text-primary"></i>
                                 تانك: {{ $tank->name }} - {{ $tank->fuel->name }}
                             </h5>
-                            <a href="{{ route('tanks.index') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-arrow-right"></i> العودة للقائمة
-                            </a>
+                            <div class="d-flex gap-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-file-export me-2"></i> تصدير
+                                    </button>
+                                    <ul class="dropdown-menu text-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('tanks.report.pdf', $tank->id) }}">
+                                                <i class="fas fa-file-pdf text-danger me-2"></i> تصدير PDF
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('tanks.report.excel', $tank->id) }}">
+                                                <i class="fas fa-file-excel text-success me-2"></i> تصدير Excel
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <a href="{{ route('tanks.index') }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-arrow-right"></i> العودة للقائمة
+                                </a>
+                            </div>
                         </div>
 
                         <x-alert-success />

@@ -67,6 +67,8 @@ Route::middleware(['auth'])->group(function () {
     /** 🛢️ التانكات */
     Route::resource('tanks', TankController::class);
     Route::get('/tanks-report/{id}', [TankController::class, 'report'])->name('tanks.report');
+    Route::get('/tanks/{id}/report/pdf', [TankController::class, 'reportPdf'])->name('tanks.report.pdf');
+    Route::get('/tanks/{id}/report/excel', [TankController::class, 'reportExcel'])->name('tanks.report.excel');
     Route::get('/tanks/{id}/add-capacity', [TankController::class, 'addCapacityForm'])->name('tanks.addCapacityForm');
     Route::post('/tanks/{id}/add-capacity', [TankController::class, 'addCapacity'])->name('tanks.addCapacity');
     Route::put('/tanks/{id}/updateAll', [TankController::class, 'updateAll'])->name('tanks.updateAll');
@@ -85,6 +87,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('clients', ClientController::class);
     Route::get('/clients/{id}/transactions', [ClientController::class, 'transactions'])->name('clients.transactions');
     Route::get('/clients/{id}/transactions/pdf', [ClientController::class, 'transactionsPdf'])->name('clients.transactions.pdf');
+    Route::get('/clients/{id}/transactions/excel', [ClientController::class, 'transactionsExcel'])->name('clients.transactions.excel');
     Route::get('/clients/{id}/add-payment', [ClientController::class, 'addPaymentForm'])->name('clients.addPaymentForm');
     Route::post('/clients/{id}/add-payment', [ClientController::class, 'addPayment'])->name('clients.addPayment');
     Route::patch('/clients/{id}/toggle-status', [ClientController::class, 'toggleStatus'])->name('clients.toggleStatus');
@@ -95,12 +98,22 @@ Route::middleware(['auth'])->group(function () {
     /** 📊 التقارير المالية */
     Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/revenues', [App\Http\Controllers\ReportController::class, 'revenues'])->name('reports.revenues');
+    Route::get('/reports/revenues/export', [App\Http\Controllers\ReportController::class, 'exportRevenues'])->name('reports.revenues.export');
+    
+    Route::get('/reports/expenses', [App\Http\Controllers\ReportController::class, 'expenses'])->name('reports.expenses');
+    Route::get('/reports/expenses/export', [App\Http\Controllers\ReportController::class, 'exportExpenses'])->name('reports.expenses.export');
+    
+    Route::get('/reports/clients', [App\Http\Controllers\ReportController::class, 'clients'])->name('reports.clients');
+    Route::get('/reports/clients/export', [App\Http\Controllers\ReportController::class, 'exportClients'])->name('reports.clients.export');
+    
+    Route::get('/reports/export', [App\Http\Controllers\ReportController::class, 'export'])->name('reports.export');
     
     /** 💸 المصروفات */
     Route::resource('expenses', App\Http\Controllers\ExpenseController::class);
 
     /** 🏦 الصندوق اليومي (الخزنة) */
     Route::get('/treasury', [\App\Http\Controllers\TreasuryController::class, 'index'])->name('treasury.index');
+    Route::get('/treasury/export', [\App\Http\Controllers\TreasuryController::class, 'export'])->name('treasury.export');
     Route::post('/treasury', [\App\Http\Controllers\TreasuryController::class, 'store'])->name('treasury.store');
     Route::delete('/treasury/{id}', [\App\Http\Controllers\TreasuryController::class, 'destroy'])->name('treasury.destroy');
 

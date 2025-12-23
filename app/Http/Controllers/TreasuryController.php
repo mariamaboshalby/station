@@ -6,50 +6,121 @@ use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\Transaction;
+use Mpdf\Mpdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TreasuryExport; // Assuming we will create this
 
 class TreasuryController extends Controller
 {
-    public function index(Request $request)
+    private function getData(Request $request)
     {
         $date = $request->input('date', date('Y-m-d'));
+        $viewAll = $request->input('view_all', false);
         
-        // 0. رأس المال (أول إيراد بتصنيف "رأس المال")
+        // 0. رأس المال
         $capital = TreasuryTransaction::where('type', 'income')
             ->where('category', 'رأس المال')
             ->sum('amount');
         
         // 1. حساب الرصيد الافتتاحي (ما قبل هذا التاريخ)
-        $previousIncome = TreasuryTransaction::where('type', 'income')
-            ->whereDate('transaction_date', '<', $date)
-            ->sum('amount');
-            
-        $previousExpense = TreasuryTransaction::where('type', 'expense')
-            ->whereDate('transaction_date', '<', $date)
-            ->sum('amount');
-            
-        $openingBalance = $previousIncome - $previousExpense;
+        if ($viewAll) {
+            $openingBalance = 0;
+        } else {
+            $previousIncome = TreasuryTransaction::where('type', 'income')
+                ->whereDate('transaction_date', '<', $date)
+                ->sum('amount');
+                
+            $previousExpense = TreasuryTransaction::where('type', 'expense')
+                ->whereDate('transaction_date', '<', $date)
+                ->sum('amount');
+                
+            $previousSales = Transaction::whereNull('client_id')
+                ->whereDate('created_at', '<', $date)
+                ->sum('total_amount');
+                
+            $openingBalance = $previousIncome + $previousSales - $previousExpense;
+        }
 
-        // 2. حركات اليوم المحدد
-        $todayTransactions = TreasuryTransaction::with('user')
-            ->whereDate('transaction_date', $date)
-            ->latest()
-            ->get();
+        // 2. جلب جميع العمليات المالية اليومية
+        $treasuryQuery = TreasuryTransaction::with('user');
+        $salesQuery = Transaction::with(['nozzle.pump.tank.fuel', 'shift.user'])->whereNull('client_id');
+        
+        if (!$viewAll) {
+            $treasuryQuery->whereDate('transaction_date', $date);
+            $salesQuery->whereDate('created_at', $date);
+        }
 
-        $todayIncome = $todayTransactions->where('type', 'income')->sum('amount');
-        $todayExpense = $todayTransactions->where('type', 'expense')->sum('amount');
+        $treasuryTransactions = $treasuryQuery->latest('transaction_date')->get()->map(function($t) {
+            return [
+                'id' => 'treasury_' . $t->id,
+                'type' => $t->type,
+                'category' => $t->category,
+                'description' => $t->description,
+                'amount' => $t->amount,
+                'date' => $t->transaction_date,
+                'user' => $t->user->name ?? 'غير محدد',
+                'source' => 'treasury'
+            ];
+        });
 
-        // 3. الرصيد الحالي (الافتتاحي + إيراد اليوم - مصروف اليوم)
+        $salesTransactions = $salesQuery->latest()->get()->map(function($t) {
+            return [
+                'id' => 'sale_' . $t->id,
+                'type' => 'income',
+                'category' => 'مبيعات ' . ($t->nozzle->pump->tank->fuel->name ?? 'وقود'),
+                'description' => 'بيع نقدي - شيفت #' . $t->shift_id,
+                'amount' => $t->total_amount,
+                'date' => $t->created_at,
+                'user' => $t->shift->user->name ?? 'غير محدد',
+                'source' => 'sales'
+            ];
+        });
+        
+        $allTransactions = $treasuryTransactions->concat($salesTransactions)->sortByDesc('date');
+
+        // 3. حساب الإجماليات
+        $todayIncome = $allTransactions->where('type', 'income')->sum('amount');
+        $todayExpense = $allTransactions->where('type', 'expense')->sum('amount');
         $currentBalance = $openingBalance + $todayIncome - $todayExpense;
 
-        return view('treasury.index', compact(
-            'date',
-            'capital',
-            'openingBalance',
-            'todayTransactions',
-            'todayIncome',
-            'todayExpense',
-            'currentBalance'
-        ));
+        return compact(
+            'date', 'viewAll', 'capital', 'openingBalance', 
+            'allTransactions', 'todayIncome', 'todayExpense', 'currentBalance'
+        );
+    }
+
+    public function index(Request $request)
+    {
+        $data = $this->getData($request);
+        return view('treasury.index', $data);
+    }
+
+    public function export(Request $request) 
+    {
+        $type = $request->input('type', 'pdf');
+        $data = $this->getData($request);
+
+        if ($type == 'excel') {
+             // سنقوم بإنشاء كلاس التصدير هذا للتعامل مع البيانات المدمجة
+             // لتبسيط الأمر، سأستخدم ميزة التصدير المباشر من Collection أو إنشاء كلاس سريع
+             return Excel::download(new \App\Exports\TreasuryExport($data), 'treasury-report.xlsx');
+        } else {
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8', 
+                'format' => 'A4', 
+                'orientation' => 'P',
+                'autoScriptToLang' => true,
+                'autoLangToFont' => true,
+            ]);
+            
+            $html = view('treasury.pdf', $data)->render();
+            $mpdf->WriteHTML($html);
+            
+            return response($mpdf->Output('', 'S'))
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="treasury-report.pdf"');
+        }
     }
 
     public function store(Request $request)
