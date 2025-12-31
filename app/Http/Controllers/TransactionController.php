@@ -98,7 +98,7 @@ class TransactionController extends Controller
             'nozzle_id' => 'required|exists:nozzles,id',
             'credit_liters' => 'required|numeric|min:0.01',
             'vehicle_number' => 'nullable|string|max:50',
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:4096',
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:10240',
             'notes' => 'nullable|string|max:500',
             'client_id' => 'nullable|exists:clients,id',
         ]);

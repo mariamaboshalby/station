@@ -16,7 +16,6 @@ class InventoryController extends Controller
     {
         $type = $request->input('type', 'daily');
         $date = $request->input('date', date('Y-m-d'));
-        
         $inventories = Inventory::with(['tank.fuel', 'user'])
             ->where('type', $type)
             ->whereDate('inventory_date', $date)
@@ -31,7 +30,7 @@ class InventoryController extends Controller
     {
         $type = $request->input('type', 'daily');
         $date = $request->input('date', date('Y-m-d'));
-        
+
         $tanks = Tank::with('fuel')->get();
 
         return view('inventory.create', compact('tanks', 'type', 'date'));
@@ -54,11 +53,9 @@ class InventoryController extends Controller
 
         foreach ($validated['inventories'] as $item) {
             $tank = Tank::with('fuel')->findOrFail($item['tank_id']);
-            
             $openingBalance = $tank->current_level;
             $purchases = $item['purchases'] ?? 0;
             $sales = $tank->liters_drawn;
-            
             $closingBalance = $openingBalance + $purchases - $sales;
             $actualBalance = $item['actual_balance'];
             $difference = $actualBalance - $closingBalance;
@@ -89,7 +86,6 @@ class InventoryController extends Controller
     public function report(Request $request)
     {
         $type = $request->input('type', 'monthly');
-        
         if ($type === 'monthly') {
             // Auto-set to first day to last day of current month
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
@@ -99,7 +95,6 @@ class InventoryController extends Controller
             $startDate = $request->input('start_date', Carbon::now()->toDateString());
             $endDate = $request->input('end_date', Carbon::now()->toDateString());
         }
-
         $inventories = Inventory::with(['tank.fuel', 'user'])
             ->where('type', $type)
             ->whereBetween('inventory_date', [$startDate, $endDate])
@@ -112,7 +107,6 @@ class InventoryController extends Controller
     public function export(Request $request)
     {
         $type = $request->input('type', 'monthly');
-        
         if ($type === 'monthly') {
             // Auto-set to first day to last day of current month
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
@@ -137,11 +131,9 @@ class InventoryController extends Controller
                 'startDate' => $startDate,
                 'endDate' => $endDate
             ];
-            
             $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4', 'orientation' => 'P', 'autoScriptToLang' => true, 'autoLangToFont' => true]);
             $html = view('inventory.report-pdf', $data)->render();
             $mpdf->WriteHTML($html);
-            
             return response($mpdf->Output('', 'S'))
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'attachment; filename="inventory_report_' . $startDate . '_' . $endDate . '.pdf"');
