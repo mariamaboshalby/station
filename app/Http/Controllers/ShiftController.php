@@ -115,7 +115,7 @@ class ShiftController extends Controller
         $validated = $request->validate([
             'nozzle_end_readings' => 'required|array',
             'nozzle_end_readings.*' => 'required|numeric|min:0',
-            'end_meter_image' => 'required|image|mimes:jpeg,png,jpg|max:4096',
+            'end_meter_image' => 'required|image|mimes:jpeg,png,jpg|max:10240',
             'notes' => 'nullable|string|max:1000',
         ]);
 
