@@ -163,6 +163,44 @@
         .overlay.active {
             display: block;
         }
+
+        /* Image Gallery Styles */
+        .gallery-image {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .gallery-item {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .carousel-item img {
+            object-fit: contain;
+        }
+
+        .carousel-caption {
+            background: rgba(0,0,0,0.7);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            filter: invert(1);
+        }
+
+        [data-bs-target^="#galleryCarousel_"].active img {
+            border: 2px solid #0d6efd;
+        }
     </style>
 
 </head>
@@ -242,6 +280,41 @@
             sidebar.classList.remove('active');
             mainContent.classList.remove('shifted');
             overlay.classList.remove('active');
+        }
+    });
+
+    // Global gallery functions
+    window.openGalleryModal = function(galleryId, startIndex = 0) {
+        const modal = document.getElementById('imageGalleryModal_' + galleryId);
+        const carousel = document.getElementById('galleryCarousel_' + galleryId);
+        
+        if (modal && carousel) {
+            const bsCarousel = new bootstrap.Carousel(carousel);
+            bsCarousel.to(startIndex);
+            
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
+    };
+
+    window.removeGalleryImage = function(galleryId, index) {
+        if (confirm('هل أنت متأكد من حذف هذه الصورة؟')) {
+            // Trigger custom event for parent to handle
+            const event = new CustomEvent('removeGalleryImage', {
+                detail: { galleryId: galleryId, index: index }
+            });
+            document.dispatchEvent(event);
+        }
+    };
+
+    // Keyboard navigation for gallery
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // Close any open gallery modal
+            document.querySelectorAll('[id^="imageGalleryModal_"].show').forEach(modal => {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) bsModal.hide();
+            });
         }
     });
 </script>
