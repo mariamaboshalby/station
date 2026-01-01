@@ -98,7 +98,7 @@ class TransactionController extends Controller
             'nozzle_id' => 'required|exists:nozzles,id',
             'credit_liters' => 'required|numeric|min:0.01',
             'vehicle_number' => 'nullable|string|max:50',
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+            'captured_images_data' => 'required|string',
             'notes' => 'nullable|string|max:500',
             'client_id' => 'nullable|exists:clients,id',
         ]);
@@ -124,9 +124,39 @@ class TransactionController extends Controller
             'total_amount' => $totalAmount,
         ]);
 
-        // 🔹 حفظ الصورة باستخدام Spatie في فولدر public
-        if ($request->hasFile('image')) {
-            $transaction->addMediaFromRequest('image')->toMediaCollection('transactions', 'public'); 
+        // 🔹 حفظ الصور الملتقطة بالكاميرا
+        if ($request->filled('captured_images_data')) {
+            $capturedImages = json_decode($request->input('captured_images_data'), true);
+            
+            if (is_array($capturedImages)) {
+                foreach ($capturedImages as $index => $imageData) {
+                    try {
+                        $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
+                        $imageData = base64_decode($imageData);
+                        
+                        if ($imageData === false) {
+                            continue; // Skip if base64 decode fails
+                        }
+                        
+                        $tempFile = tempnam(sys_get_temp_dir(), 'captured_transaction_image_' . $index . '_');
+                        
+                        if ($tempFile && file_put_contents($tempFile, $imageData) !== false) {
+                            $transaction->addMedia($tempFile)
+                                ->usingFileName('captured_transaction_photo_' . ($index + 1) . '_' . time() . '.jpg')
+                                ->toMediaCollection('transactions', 'public');
+                                
+                            // Clean up temporary file if it exists
+                            if (file_exists($tempFile)) {
+                                unlink($tempFile);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // Log error but continue with other images
+                        \Log::error('Error processing captured image: ' . $e->getMessage());
+                        continue;
+                    }
+                }
+            }
         }
 
         // 🔹 لو العملية تخص عميل آجل
