@@ -11,6 +11,7 @@ use App\Http\Controllers\TankController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NozzleController;
 use App\Http\Controllers\NozzleCalculationController;
+use App\Http\Controllers\PumpController;
 use App\Models\Shift;
 
 /*
@@ -74,9 +75,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/tanks/{id}/updateAll', [TankController::class, 'updateAll'])->name('tanks.updateAll');
     Route::post('/tanks/pumps/{id}/nozzles', [TankController::class, 'storeNozzle'])->name('tanks.storeNozzle');
     Route::delete('/tanks/nozzles/{id}', [TankController::class, 'destroyNozzle'])->name('tanks.destroyNozzle');
-
+    
     /** 🔫 المسدسات */
     Route::patch('/nozzles/{id}/update-meter', [NozzleController::class, 'updateMeter'])->name('nozzles.updateMeter');
+    Route::patch('/nozzles/{id}/update-name', [NozzleController::class, 'updateName'])->name('nozzles.updateName');
+    
+    /** 🔧 الطلمبات */
+    Route::patch('/pumps/{id}/update-name', [PumpController::class, 'updateName'])->name('pumps.updateName');
     /** 💰 العمليات (Transactions) */
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');

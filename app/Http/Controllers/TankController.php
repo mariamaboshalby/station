@@ -66,6 +66,32 @@ class TankController extends Controller
         return view('tanks.edit', compact('tank'));
     }
 
+    public function update(Request $request, $id)
+    {
+        $tank = Tank::with('fuel')->findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'current_level' => 'required|numeric|min:0',
+            'price_per_liter' => 'required|numeric|min:0',
+            'price_for_owner' => 'required|numeric|min:0',
+        ]);
+
+        // ✅ تحديث اسم التانك
+        $tank->update(['name' => $validated['name']]);
+
+        // ✅ تحديث السعة الحالية
+        $tank->update(['current_level' => $validated['current_level']]);
+
+        // ✅ تحديث أسعار الوقود المرتبط
+        $tank->fuel->update([
+            'price_per_liter' => $validated['price_per_liter'],
+            'price_for_owner' => $validated['price_for_owner'],
+        ]);
+
+        return redirect()->route('tanks.index')->with('success', 'تم تحديث بيانات التانك بنجاح ✅');
+    }
+
     public function updateAll(Request $request, $id)
     {
         $tank = Tank::with('fuel')->findOrFail($id);
