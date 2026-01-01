@@ -14,10 +14,15 @@
                         <x-alert-success />
                     @endif
 
-                    {{-- ✅ فورم موحد لتعديل السعة والأسعار --}}
-                    <form action="{{ route('tanks.updateAll', $tank->id) }}" method="POST" class="p-3">
+                    {{-- ✅ فورم موحد لتعديل اسم التانك والسعة والأسعار --}}
+                    <form action="{{ route('tanks.update', $tank->id) }}" method="POST" class="p-3">
                         @csrf
                         @method('PUT')
+
+                        <x-form.input type="text" name="name" id="name" 
+                            label="اسم التانك" :value="$tank->name" required />
+
+                        <hr>
 
                         <x-form.input type="number" name="current_level" id="current_level" 
                             label="السعة الحالية (لتر)" :value="$tank->current_level" required />

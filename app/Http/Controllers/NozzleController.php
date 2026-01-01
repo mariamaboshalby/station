@@ -29,4 +29,27 @@ class NozzleController extends Controller
             ->route('tanks.report', $tankId)
             ->with('success', '✅ تم تحديث قراءة العداد بنجاح');
     }
+
+    /**
+     * Update the nozzle name
+     */
+    public function updateName(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $nozzle = Nozzle::findOrFail($id);
+        
+        $nozzle->update([
+            'name' => $request->name,
+        ]);
+
+        // Get tank_id through pump relationship
+        $tankId = $nozzle->pump->tank_id;
+
+        return redirect()
+            ->route('tanks.report', $tankId)
+            ->with('success', '✅ تم تحديث اسم المسدس بنجاح');
+    }
 }

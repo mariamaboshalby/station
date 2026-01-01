@@ -78,10 +78,16 @@
                                         <i class="fas fa-cog"></i>
                                         {{ $pump->name }} - عدد المسدسات: {{ $pump->nozzles->count() }}
                                     </span>
-                                    <button class="btn btn-sm btn-light text-primary" data-bs-toggle="modal"
-                                        data-bs-target="#addNozzleModal{{ $pump->id }}">
-                                        <i class="fas fa-plus"></i> إضافة مسدس
-                                    </button>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-light text-primary" data-bs-toggle="modal"
+                                            data-bs-target="#editPumpModal{{ $pump->id }}">
+                                            <i class="fas fa-edit"></i> تعديل اسم
+                                        </button>
+                                        <button class="btn btn-sm btn-light text-primary" data-bs-toggle="modal"
+                                            data-bs-target="#addNozzleModal{{ $pump->id }}">
+                                            <i class="fas fa-plus"></i> إضافة مسدس
+                                        </button>
+                                    </div>
                                 </h6>
 
                                 <div class="table-responsive">
@@ -106,22 +112,73 @@
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <button type="button" class="btn btn-sm btn-primary"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#updateMeterModal{{ $nozzle->id }}">
-                                                            <i class="fas fa-edit"></i> تحديث
-                                                        </button>
-                                                        <form action="{{ route('tanks.destroyNozzle', $nozzle->id) }}"
-                                                            method="POST" class="d-inline"
-                                                            onsubmit="return confirm('هل أنت متأكد من حذف هذا المسدس؟')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                                <i class="fas fa-trash"></i> حذف
+                                                        <div class="d-flex gap-1">
+                                                            <button type="button" class="btn btn-sm btn-info"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editNozzleModal{{ $nozzle->id }}">
+                                                                <i class="fas fa-edit"></i> اسم
                                                             </button>
-                                                        </form>
+                                                            <button type="button" class="btn btn-sm btn-primary"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#updateMeterModal{{ $nozzle->id }}">
+                                                                <i class="fas fa-tachometer-alt"></i> تحديث
+                                                            </button>
+                                                            <form action="{{ route('tanks.destroyNozzle', $nozzle->id) }}"
+                                                                method="POST" class="d-inline"
+                                                                onsubmit="return confirm('هل أنت متأكد من حذف هذا المسدس؟')">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                                    <i class="fas fa-trash"></i> حذف
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </td>
                                                 </tr>
+
+                                                <!-- Edit Nozzle Name Modal -->
+                                                <div class="modal fade" id="editNozzleModal{{ $nozzle->id }}"
+                                                    tabindex="-1">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-info text-white">
+                                                                <h5 class="modal-title">
+                                                                    <i class="fas fa-edit"></i>
+                                                                    تعديل اسم المسدس - {{ $nozzle->name }}
+                                                                </h5>
+                                                                <button type="button" class="btn-close btn-close-white"
+                                                                    data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <form action="{{ route('nozzles.updateName', $nozzle->id) }}"
+                                                                method="POST">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <div class="modal-body">
+                                                                    <div class="alert alert-info">
+                                                                        <strong>الطلمبة:</strong> {{ $pump->name }}<br>
+                                                                        <strong>المسدس الحالي:</strong> {{ $nozzle->name }}
+                                                                    </div>
+
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label">اسم المسدس الجديد: <span
+                                                                                class="text-danger">*</span></label>
+                                                                        <input type="text" name="name" class="form-control"
+                                                                            value="{{ $nozzle->name }}" required>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">
+                                                                        <i class="fas fa-times"></i> إلغاء
+                                                                    </button>
+                                                                    <button type="submit" class="btn btn-info">
+                                                                        <i class="fas fa-save"></i> حفظ التعديل
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                 <!-- Update Meter Reading Modal -->
                                                 <div class="modal fade" id="updateMeterModal{{ $nozzle->id }}"
@@ -192,6 +249,49 @@
                                             </tr>
                                         </tfoot>
                                     </table>
+                                </div>
+                            </div>
+
+                            <!-- Edit Pump Name Modal -->
+                            <div class="modal fade" id="editPumpModal{{ $pump->id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-white">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-edit"></i>
+                                                تعديل اسم الطلمبة - {{ $pump->name }}
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{{ route('pumps.updateName', $pump->id) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">اسم الطلمبة الحالي:</label>
+                                                    <input type="text" class="form-control"
+                                                        value="{{ $pump->name }}" readonly>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label">اسم الطلمبة الجديد: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input type="text" name="name" class="form-control"
+                                                        value="{{ $pump->name }}" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">
+                                                    <i class="fas fa-times"></i> إلغاء
+                                                </button>
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="fas fa-save"></i> حفظ التعديل
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
 
