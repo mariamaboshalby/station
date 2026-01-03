@@ -6,6 +6,13 @@
         <i class="fa fa-user-edit me-2"></i> تعديل المستخدم: {{ $user->name }}
     </h2>
 
+    <x-alert-success />
+    @if(session('error'))
+        <div class="alert alert-danger text-center">
+            <i class="fas fa-exclamation-triangle me-2"></i> {{ session('error') }}
+        </div>
+    @endif
+
     <form action="{{ route('users.update', $user->id) }}" method="POST">
         @csrf
         @method('PUT')

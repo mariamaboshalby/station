@@ -7,6 +7,7 @@ use App\Models\Tank;
 use App\Models\Pump;
 use App\Models\Nozzle;
 use App\Models\TreasuryTransaction;
+use App\Models\Expense;
 use Illuminate\Http\Request;
 use Mpdf\Mpdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -125,6 +126,7 @@ class TankController extends Controller
         $request->validate([
             'amount' => 'required|numeric|min:1',
             'cost_per_liter' => 'nullable|numeric|min:0',
+            'invoice_number' => 'required|string',
             'deduct_from_treasury' => 'nullable|in:on,off',
         ]);
 
@@ -143,6 +145,17 @@ class TankController extends Controller
             if ($costPerLiter > 0) {
                 $totalCost = $request->amount * $costPerLiter;
                 
+                // Create Expense record
+                Expense::create([
+                    'user_id' => auth()->id(),
+                    'category' => 'purchasing',
+                    'amount' => $totalCost,
+                    'description' => "تفريغ {$request->amount} لتر في {$tank->name} × {$costPerLiter} ج.م",
+                    'expense_date' => now()->toDateString(),
+                    'invoice_number' => $request->invoice_number,
+                ]);
+                
+                // Also create Treasury transaction for treasury tracking
                 TreasuryTransaction::create([
                     'user_id' => auth()->id(),
                     'type' => 'expense',

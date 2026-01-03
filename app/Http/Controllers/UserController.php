@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -139,6 +140,7 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('User update error: ' . $e->getMessage());
             return back()->withInput()
                 ->with('error', 'حدث خطأ أثناء التحديث: ' . $e->getMessage());
         }

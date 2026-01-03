@@ -2,143 +2,188 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Inventory;
 use App\Models\Tank;
+use App\Models\Pump;
+use App\Models\Nozzle;
+use App\Models\PumpInventory;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\InventoryExport;
 use Mpdf\Mpdf;
+use Illuminate\Support\Facades\Auth;
 
 class InventoryController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Monthly Inventory Index
+     */
+    public function monthlyIndex(Request $request)
     {
-        $type = $request->input('type', 'daily');
-        $date = $request->input('date', date('Y-m-d'));
-        $inventories = Inventory::with(['tank.fuel', 'user'])
-            ->where('type', $type)
-            ->whereDate('inventory_date', $date)
+        $month = $request->input('month', date('Y-m'));
+        $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();
+        
+        return view('inventory.monthly.index', compact('month', 'startDate', 'endDate'));
+    }
+    
+    /**
+     * Monthly Detailed Report (from pump inventories)
+     */
+    public function monthlyDetailed(Request $request)
+    {
+        $month = $request->input('month', date('Y-m'));
+        $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();
+        
+        // Get all pump inventories for the month
+        $pumpInventories = PumpInventory::with(['pump.tank.fuel', 'nozzle'])
+            ->whereBetween('inventory_date', [$startDate, $endDate])
+            ->orderBy('inventory_date')
+            ->orderBy('pump_id')
             ->get();
-
-        $tanks = Tank::with('fuel')->get();
-
-        return view('inventory.index', compact('inventories', 'tanks', 'type', 'date'));
+        
+        // Group by pump and date
+        $groupedInventories = $pumpInventories->groupBy(function($item) {
+            return $item->inventory_date . '_' . $item->pump_id;
+        });
+        
+        return view('inventory.monthly.detailed', compact('pumpInventories', 'groupedInventories', 'month', 'startDate', 'endDate'));
     }
-
-    public function create(Request $request)
+    
+    /**
+     * Monthly Summary Report (aggregated from pump inventories)
+     */
+    public function monthlySummary(Request $request)
     {
-        $type = $request->input('type', 'daily');
-        $date = $request->input('date', date('Y-m-d'));
-
-        $tanks = Tank::with('fuel')->get();
-
-        return view('inventory.create', compact('tanks', 'type', 'date'));
+        $month = $request->input('month', date('Y-m'));
+        $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();
+        
+        // Get all pump inventories for the month
+        $pumpInventories = PumpInventory::with(['pump.tank.fuel', 'nozzle'])
+            ->whereBetween('inventory_date', [$startDate, $endDate])
+            ->get();
+        
+        // Aggregate by pump
+        $summary = $pumpInventories->groupBy('pump_id')->map(function($inventories) {
+            $pump = $inventories->first()->pump;
+            $totalSales = $inventories->sum('sales');
+            $totalDispensed = $inventories->sum('liters_dispensed');
+            $totalRevenue = $inventories->sum(function($inv) {
+                return $inv->sales * ($inv->pump->tank->fuel->price_for_client ?? 0);
+            });
+            
+            return [
+                'pump' => $pump,
+                'total_sales' => $totalSales,
+                'total_dispensed' => $totalDispensed,
+                'total_revenue' => $totalRevenue,
+                'days_count' => $inventories->count(),
+                'avg_daily_sales' => $totalSales / max($inventories->count(), 1),
+            ];
+        });
+        
+        // Grand totals
+        $grandTotalSales = $summary->sum('total_sales');
+        $grandTotalDispensed = $summary->sum('total_dispensed');
+        $grandTotalRevenue = $summary->sum('total_revenue');
+        
+        return view('inventory.monthly.summary', compact(
+            'summary', 
+            'grandTotalSales', 
+            'grandTotalDispensed', 
+            'grandTotalRevenue', 
+            'month', 
+            'startDate', 
+            'endDate'
+        ));
     }
 
-    public function store(Request $request)
+    /**
+     * Pump inventory index
+     */
+    public function pumpIndex(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        
+        // Get all pumps with their nozzles
+        $pumps = Pump::with(['nozzles', 'tank.fuel'])->get();
+        
+        return view('inventory.pump-index', compact('pumps', 'date'));
+    }
+
+    /**
+     * Pump inventory create form
+     */
+    public function pumpCreate(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        
+        // Get all pumps with their nozzles
+        $pumps = Pump::with(['nozzles', 'tank.fuel'])->get();
+        
+        return view('inventory.pump-create', compact('pumps', 'date'));
+    }
+
+    /**
+     * Store pump inventory
+     */
+    public function pumpStore(Request $request)
     {
         $validated = $request->validate([
             'inventory_date' => 'required|date',
-            'type' => 'required|in:daily,monthly',
-            'supplier' => 'nullable|string',
-            'invoice_number' => 'nullable|string',
-            'invoice_date' => 'nullable|date',
-            'inventories' => 'required|array',
-            'inventories.*.tank_id' => 'required|exists:tanks,id',
-            'inventories.*.purchases' => 'nullable|numeric|min:0',
-            'inventories.*.actual_balance' => 'required|numeric|min:0',
-            'inventories.*.notes' => 'nullable|string',
+            'nozzles' => 'required|array',
+            'nozzles.*.opening_reading' => 'required|numeric|min:0',
+            'nozzles.*.closing_reading' => 'required|numeric|min:0',
         ]);
 
-        foreach ($validated['inventories'] as $item) {
-            $tank = Tank::with('fuel')->findOrFail($item['tank_id']);
-            $openingBalance = $tank->current_level;
-            $purchases = $item['purchases'] ?? 0;
-            $sales = $tank->liters_drawn;
-            $closingBalance = $openingBalance + $purchases - $sales;
-            $actualBalance = $item['actual_balance'];
-            $difference = $actualBalance - $closingBalance;
-
-            Inventory::create([
+        foreach ($validated['nozzles'] as $nozzleId => $nozzleData) {
+            $nozzle = Nozzle::with(['pump.tank.fuel'])->findOrFail($nozzleId);
+            
+            $openingReading = $nozzleData['opening_reading'];
+            $closingReading = $nozzleData['closing_reading'];
+            
+            // Calculate sales as closing reading (this will be start of next day)
+            $sales = $closingReading;
+            // Calculate cash liters = End of Shift - Start of Shift
+            $litersDispensed = $closingReading - $openingReading;
+            
+            // Store pump inventory record
+            PumpInventory::create([
                 'inventory_date' => $validated['inventory_date'],
-                'type' => $validated['type'],
-                'supplier' => $validated['supplier'] ?? null,
-                'invoice_number' => $validated['invoice_number'] ?? null,
-                'invoice_date' => $validated['invoice_date'] ?? null,
-                'tank_id' => $item['tank_id'],
-                'fuel_type' => $tank->fuel->name,
-                'opening_balance' => $openingBalance,
-                'purchases' => $purchases,
+                'pump_id' => $nozzle->pump_id,
+                'nozzle_id' => $nozzle->id,
+                'tank_id' => $nozzle->pump->tank_id,
+                'fuel_type' => $nozzle->pump->tank->fuel->name,
+                'opening_reading' => $openingReading,
+                'closing_reading' => $closingReading,
+                'liters_dispensed' => $litersDispensed,
                 'sales' => $sales,
-                'closing_balance' => $closingBalance,
-                'actual_balance' => $actualBalance,
-                'difference' => $difference,
-                'notes' => $item['notes'] ?? null,
-                'user_id' => auth()->id(),
+                'notes' => $nozzleData['notes'] ?? null,
+                'user_id' => Auth::id(),
             ]);
+            
+            // Update nozzle meter reading
+            $nozzle->update(['meter_reading' => $closingReading]);
         }
 
-        return redirect()->route('inventory.index', ['type' => $validated['type'], 'date' => $validated['inventory_date']])
-            ->with('success', 'تم حفظ الجرد بنجاح ✅');
+        return redirect()->route('inventory.pump.index', ['date' => $validated['inventory_date']])
+            ->with('success', 'تم حفظ جرد الطلمبات بنجاح ✅');
     }
 
-    public function report(Request $request)
+    /**
+     * Pump inventory report
+     */
+    public function pumpReport(Request $request)
     {
-        $type = $request->input('type', 'monthly');
-        if ($type === 'monthly') {
-            // Auto-set to first day to last day of current month
-            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
-        } else {
-            // Daily or custom range
-            $startDate = $request->input('start_date', Carbon::now()->toDateString());
-            $endDate = $request->input('end_date', Carbon::now()->toDateString());
-        }
-        $inventories = Inventory::with(['tank.fuel', 'user'])
-            ->where('type', $type)
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+        
+        $pumpInventories = PumpInventory::with(['pump.tank.fuel', 'nozzle', 'user'])
             ->whereBetween('inventory_date', [$startDate, $endDate])
             ->orderBy('inventory_date', 'desc')
+            ->orderBy('pump_id')
             ->get();
 
-        return view('inventory.report', compact('inventories', 'type', 'startDate', 'endDate'));
-    }
-
-    public function export(Request $request)
-    {
-        $type = $request->input('type', 'monthly');
-        if ($type === 'monthly') {
-            // Auto-set to first day to last day of current month
-            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
-        } else {
-            // Daily or custom range
-            $startDate = $request->input('start_date', Carbon::now()->toDateString());
-            $endDate = $request->input('end_date', Carbon::now()->toDateString());
-        }
-        $exportType = $request->input('export_type', 'excel');
-
-        $inventories = Inventory::with(['tank.fuel', 'user'])
-            ->where('type', $type)
-            ->whereBetween('inventory_date', [$startDate, $endDate])
-            ->orderBy('inventory_date', 'desc')
-            ->get();
-
-        if ($exportType == 'pdf') {
-            $data = [
-                'inventories' => $inventories,
-                'type' => $type,
-                'startDate' => $startDate,
-                'endDate' => $endDate
-            ];
-            $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4', 'orientation' => 'P', 'autoScriptToLang' => true, 'autoLangToFont' => true]);
-            $html = view('inventory.report-pdf', $data)->render();
-            $mpdf->WriteHTML($html);
-            return response($mpdf->Output('', 'S'))
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="inventory_report_' . $startDate . '_' . $endDate . '.pdf"');
-        } else {
-            return Excel::download(new InventoryExport($inventories), 'inventory_' . $startDate . '_' . $endDate . '.xlsx');
-        }
+        return view('inventory.pump-report', compact('pumpInventories', 'startDate', 'endDate'));
     }
 }

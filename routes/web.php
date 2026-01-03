@@ -12,6 +12,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\NozzleController;
 use App\Http\Controllers\NozzleCalculationController;
 use App\Http\Controllers\PumpController;
+use App\Http\Controllers\BatchTransactionController;
 use App\Models\Shift;
 
 /*
@@ -82,10 +83,17 @@ Route::middleware(['auth'])->group(function () {
     
     /** 🔧 الطلمبات */
     Route::patch('/pumps/{id}/update-name', [PumpController::class, 'updateName'])->name('pumps.updateName');
+    Route::get('/pumps/{id}/edit', [PumpController::class, 'edit'])->name('pumps.edit');
+    Route::put('/pumps/{id}', [PumpController::class, 'update'])->name('pumps.update');
     /** 💰 العمليات (Transactions) */
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
     Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+
+    /** 📦 الدفعات (Batch Transactions) */
+    Route::get('/batch-transactions', [BatchTransactionController::class, 'index'])->name('batch-transactions.index');
+    Route::get('/batch-transactions/create', [BatchTransactionController::class, 'create'])->name('batch-transactions.create');
+    Route::post('/batch-transactions', [BatchTransactionController::class, 'store'])->name('batch-transactions.store');
 
     /** 👥 العملاء */
     Route::get('/clients/search', [ClientController::class, 'search'])->name('clients.search');
@@ -128,6 +136,17 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/inventory', [\App\Http\Controllers\InventoryController::class, 'store'])->name('inventory.store');
     Route::get('/inventory/report', [\App\Http\Controllers\InventoryController::class, 'report'])->name('inventory.report');
     Route::get('/inventory/export', [\App\Http\Controllers\InventoryController::class, 'export'])->name('inventory.export');
+    
+    /** 📊 الجرد الشهري التلقائي */
+    Route::get('/inventory/monthly', [\App\Http\Controllers\InventoryController::class, 'monthlyIndex'])->name('inventory.monthly.index');
+    Route::get('/inventory/monthly/detailed', [\App\Http\Controllers\InventoryController::class, 'monthlyDetailed'])->name('inventory.monthly.detailed');
+    Route::get('/inventory/monthly/summary', [\App\Http\Controllers\InventoryController::class, 'monthlySummary'])->name('inventory.monthly.summary');
+    
+    /** 🔧 جرد الطلمبات */
+    Route::get('/inventory/pumps', [\App\Http\Controllers\InventoryController::class, 'pumpIndex'])->name('inventory.pump.index');
+    Route::get('/inventory/pumps/create', [\App\Http\Controllers\InventoryController::class, 'pumpCreate'])->name('inventory.pump.create');
+    Route::post('/inventory/pumps', [\App\Http\Controllers\InventoryController::class, 'pumpStore'])->name('inventory.pump.store');
+    Route::get('/inventory/pumps/report', [\App\Http\Controllers\InventoryController::class, 'pumpReport'])->name('inventory.pump.report');
 });
 
 require __DIR__ . '/auth.php';

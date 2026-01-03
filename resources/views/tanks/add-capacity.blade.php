@@ -41,6 +41,12 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label font-bold">رقم الفاتورة</label>
+                            <input type="text" name="invoice_number" class="form-control fw-bold" 
+                                placeholder="أدخل رقم الفاتورة" required>
+                        </div>
+
+                        <div class="mb-3">
                             <div class="form-check form-switch p-0">
                                 <label class="form-check-label fw-bold ms-5" for="deduct_from_treasury">
                                     💰 خصم المبلغ من الخزنة (تسجيل كمصروف)

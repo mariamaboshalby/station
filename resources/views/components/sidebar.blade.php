@@ -84,14 +84,14 @@
             </a>
             <div class="collapse {{ request()->is('inventory*') ? 'show' : '' }} bg-black bg-opacity-25" id="inventorySubmenu">
                 <nav class="nav flex-column ps-3">
-                    <a href="{{ route('inventory.index', ['type' => 'daily']) }}" class="nav-link {{ request()->routeIs('inventory.index') && request('type') == 'daily' ? 'text-white fw-bold' : 'text-white-50' }} py-2">
-                        <i class="fas fa-calendar-day me-2"></i> الجرد اليومي
+                    <a href="{{ route('inventory.monthly.index') }}" class="nav-link {{ request()->routeIs('inventory.monthly.*') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-chart-bar me-2"></i> الجرد الشهري التلقائي
                     </a>
-                    <a href="{{ route('inventory.index', ['type' => 'monthly']) }}" class="nav-link {{ request()->routeIs('inventory.index') && request('type') == 'monthly' ? 'text-white fw-bold' : 'text-white-50' }} py-2">
-                        <i class="fas fa-calendar-alt me-2"></i> الجرد الشهري
+                    <a href="{{ route('inventory.pump.index') }}" class="nav-link {{ request()->routeIs('inventory.pump.*') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-cog me-2"></i> جرد الطلمبات
                     </a>
-                    <a href="{{ route('inventory.report') }}" class="nav-link {{ request()->routeIs('inventory.report') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
-                        <i class="fas fa-chart-bar me-2"></i> تقارير الجرد
+                    <a href="{{ route('inventory.pump.report') }}" class="nav-link {{ request()->routeIs('inventory.pump.report') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
+                        <i class="fas fa-chart-line me-2"></i> تقارير الطلمبات
                     </a>
                 </nav>
             </div>
