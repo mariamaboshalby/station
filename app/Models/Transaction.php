@@ -13,6 +13,8 @@ class Transaction extends Model implements HasMedia
     use HasFactory, InteractsWithMedia;
 
     protected $fillable = [
+        'invoice_number',
+        'batch_number',
         'shift_id',
         'pump_id',
         'nozzle_id',
