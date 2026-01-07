@@ -20,6 +20,8 @@
                                 label="إضافة جرد جديد" :href="route('inventory.pump.create', ['date' => $date])" />
                             <x-button type="link" color="info" size="sm" icon="chart-bar" label="تقارير الجرد"
                                 :href="route('inventory.pump.report')" />
+                            <x-button type="link" color="primary" size="sm" icon="table" label="اليومي المفصل"
+                                :href="route('inventory.daily.summary', ['date' => $date])" />
                         </div>
                     </div>
 
@@ -87,19 +89,19 @@
                                             @endforeach
                                         </tr>
 
-                                        {{-- مبيعات اليوم --}}
+                                        {{-- قراءة المسدس نهاية اليوم --}}
                                         <tr>
-                                            <td class="fw-bold bg-light">مبيعات اليوم</td>
+                                            <td class="fw-bold bg-light">قراءة المسدس</td>
                                             @foreach ($nozzles as $nozzle)
                                                 @php
-                                                    // Get sales as start of next day (next day's opening reading)
-                                                    $nextDay = \App\Models\PumpInventory::where('nozzle_id', $nozzle->id)
-                                                        ->whereDate('inventory_date', date('Y-m-d', strtotime($date . ' +1 day')))
+                                                    // Get today's closing reading as meter reading
+                                                    $today = \App\Models\PumpInventory::where('nozzle_id', $nozzle->id)
+                                                        ->whereDate('inventory_date', $date)
                                                         ->first();
-                                                    $sales = $nextDay ? $nextDay->opening_reading : 0;
+                                                    $meterReading = $today ? $today->closing_reading : 0;
                                                 @endphp
                                                 <td class="text-primary fw-semibold">
-                                                    {{ number_format($sales, 2) }}
+                                                    {{ number_format($meterReading, 2) }}
                                                 </td>
                                             @endforeach
                                         </tr>
