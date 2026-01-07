@@ -91,7 +91,9 @@
                                 @forelse($transactions as $transaction)
                                     <tr>
                                         <td>{{ $transaction->shift->user->name ?? '-' }}</td>
-                                        <td>{{ $transaction->pump->name ?? '-' }}-تانك
+                                        <td>
+                                        {{ $transaction->nozzle->name ?? '-' }} -
+                                            {{ $transaction->pump->name ?? '-' }} - تانك
                                             {{ $transaction->pump->tank->name ?? '-' }} -
                                             {{ $transaction->pump->tank->fuel->name ?? '-' }}</td>
                                         <td>{{ $transaction->client->name ?? '-' }}</td>

@@ -136,11 +136,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/inventory', [\App\Http\Controllers\InventoryController::class, 'store'])->name('inventory.store');
     Route::get('/inventory/report', [\App\Http\Controllers\InventoryController::class, 'report'])->name('inventory.report');
     Route::get('/inventory/export', [\App\Http\Controllers\InventoryController::class, 'export'])->name('inventory.export');
+    Route::get('/inventory/daily/summary', [\App\Http\Controllers\InventoryController::class, 'dailySummary'])->name('inventory.daily.summary');
     
     /** 📊 الجرد الشهري التلقائي */
     Route::get('/inventory/monthly', [\App\Http\Controllers\InventoryController::class, 'monthlyIndex'])->name('inventory.monthly.index');
     Route::get('/inventory/monthly/detailed', [\App\Http\Controllers\InventoryController::class, 'monthlyDetailed'])->name('inventory.monthly.detailed');
-    Route::get('/inventory/monthly/summary', [\App\Http\Controllers\InventoryController::class, 'monthlySummary'])->name('inventory.monthly.summary');
+    Route::get('/inventory/monthly/summary', [\App\Http\Controllers\InventoryController::class, 'monthlySummaryNew'])->name('inventory.monthly.summary');
     
     /** 🔧 جرد الطلمبات */
     Route::get('/inventory/pumps', [\App\Http\Controllers\InventoryController::class, 'pumpIndex'])->name('inventory.pump.index');

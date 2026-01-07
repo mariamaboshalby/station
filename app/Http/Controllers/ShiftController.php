@@ -189,6 +189,9 @@ class ShiftController extends Controller
             // ✅ إجمالي اللترات الآجلة
             $totalCreditLiters = $shift->transactions->sum('credit_liters');
 
+            // ✅ حساب لترات الكاش = إجمالي المنصرف - إجمالي الآجل
+            $totalCashLiters = max(0, $totalLitersDispensed - $totalCreditLiters);
+
             // ✅ إنشاء عمليات لكل طلمبة (تجميعي)
             $totalShiftCashLiters = 0;
             $totalShiftAmount = 0;
@@ -221,12 +224,12 @@ class ShiftController extends Controller
 
             // ✅ إنشاء معاملة واحدة مجمعة للشيفت
             $shiftTransaction = null;
-            if ($totalShiftCashLiters > 0 && $firstPumpId) {
+            if ($totalCashLiters > 0 && $firstPumpId) {
                 $shiftTransaction = Transaction::create([
                     'shift_id' => $shift->id,
                     'pump_id' => $firstPumpId, // تسجيلها باسم أول طلمبة
-                    'cash_liters' => $totalShiftCashLiters,
-                    'credit_liters' => 0,
+                    'cash_liters' => $totalCashLiters,
+                    'credit_liters' => $totalCreditLiters,
                     'total_amount' => $totalShiftAmount,
                     'notes' => "إغلاق شيفت: " . implode(' + ', $usedPumpsNames),
                 ]);

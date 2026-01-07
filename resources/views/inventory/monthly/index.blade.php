@@ -24,8 +24,8 @@
                     <a href="{{ route('inventory.monthly.detailed', ['month' => $month]) }}" class="btn btn-success">
                         <i class="fas fa-list-alt me-2"></i> تقرير تفصيلي
                     </a>
-                    <a href="{{ route('inventory.monthly.summary', ['month' => $month]) }}" class="btn btn-info">
-                        <i class="fas fa-chart-bar me-2"></i> تقرير مجمل
+                    <a href="{{ route('inventory.monthly.summary', ['month' => $month]) }}?debug=1" class="btn btn-info">
+                        <i class="fas fa-chart-bar me-2"></i> الجرد الشهري المجمل
                     </a>
                 </div>
             </form>

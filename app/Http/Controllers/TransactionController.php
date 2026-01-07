@@ -14,7 +14,7 @@ class TransactionController extends Controller
     // عرض كل العمليات
     public function index(Request $request)
     {
-        $query = Transaction::with(['shift.user', 'pump.tank.fuel', 'client', 'media'])->latest();
+        $query = Transaction::with(['shift.user', 'pump.tank.fuel', 'nozzle', 'client', 'media'])->latest();
 
         // تصفية حسب العميل
         if ($request->filled('client_id')) {
