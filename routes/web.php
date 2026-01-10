@@ -137,6 +137,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/inventory/report', [\App\Http\Controllers\InventoryController::class, 'report'])->name('inventory.report');
     Route::get('/inventory/export', [\App\Http\Controllers\InventoryController::class, 'export'])->name('inventory.export');
     Route::get('/inventory/daily/summary', [\App\Http\Controllers\InventoryController::class, 'dailySummary'])->name('inventory.daily.summary');
+
+    
+    /** 🎯 الرصيد الفعلي اليدوي */
+    Route::get('/inventory/actual-balance/form', [\App\Http\Controllers\InventoryController::class, 'actualBalanceForm'])->name('inventory.actual.balance.form');
+    Route::post('/inventory/actual-balance/store', [\App\Http\Controllers\InventoryController::class, 'actualBalanceStore'])->name('inventory.actual.balance.store');
     
     /** 📊 الجرد الشهري التلقائي */
     Route::get('/inventory/monthly', [\App\Http\Controllers\InventoryController::class, 'monthlyIndex'])->name('inventory.monthly.index');

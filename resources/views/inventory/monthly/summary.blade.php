@@ -6,9 +6,15 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-1">📊 الجرد الشهري المجمل</h2>
-            <p class="text-muted">فترة التقرير: من {{ $startDate ?? date('Y-m-01') }} إلى {{ $endDate ?? date('Y-m-t') }}</p>
+            <p class="text-muted mb-0">فترة التقرير: من {{ $startDate ?? date('Y-m-01') }} إلى {{ $endDate ?? date('Y-m-t') }}</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ route('inventory.monthly.summary.pdf', ['month' => $month ?? date('Y-m')]) }}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-2"></i> PDF
+            </a>
+            <a href="{{ route('inventory.monthly.summary.excel', ['month' => $month ?? date('Y-m')]) }}" class="btn btn-success">
+                <i class="fas fa-file-excel me-2"></i> Excel
+            </a>
             <a href="{{ route('inventory.monthly.index', ['month' => $month ?? date('Y-m')]) }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-right me-2"></i> رجوع
             </a>
@@ -22,17 +28,6 @@
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body p-4">
             <h4 class="fw-bold text-center mb-4">الجرد الشهري المجمل</h4>
-            
-            <!-- Debug Info (remove in production) -->
-            @if(request()->has('debug'))
-                <div class="alert alert-info">
-                    <h6>Debug Information:</h6>
-                    <p>Month: {{ $month }}</p>
-                    <p>Start Date: {{ $startDate }}</p>
-                    <p>End Date: {{ $endDate }}</p>
-                    <p>Solar Data: {{ json_encode($solarData ?? []) }}</p>
-                </div>
-            @endif
             
             @if(($solarData['balance'] ?? 0) == 0 && ($solarData['dispensed'] ?? 0) == 0)
                 <div class="alert alert-warning text-center">
@@ -63,7 +58,7 @@
                             <td>{{ number_format($solarData['received'] ?? 0, 2) }}</td>
                             <td class="fw-bold">{{ number_format(($solarData['balance'] ?? 0) + ($solarData['received'] ?? 0), 2) }}</td>
                             <td>{{ number_format($solarData['dispensed'] ?? 0, 2) }}</td>
-                            <td class="fw-bold text-primary">{{ number_format(($solarData['balance'] ?? 0) + ($solarData['received'] ?? 0) - ($solarData['dispensed'] ?? 0), 2) }}</td>
+                            <td class="fw-bold text-primary">{{ number_format($solarData['actual_balance'] ?? 0, 2) }}</td>
                         </tr>
                         
                         <!-- Benzine 92 -->
@@ -73,7 +68,7 @@
                             <td>{{ number_format($benzine92Data['received'] ?? 0, 2) }}</td>
                             <td class="fw-bold">{{ number_format(($benzine92Data['balance'] ?? 0) + ($benzine92Data['received'] ?? 0), 2) }}</td>
                             <td>{{ number_format($benzine92Data['dispensed'] ?? 0, 2) }}</td>
-                            <td class="fw-bold text-primary">{{ number_format(($benzine92Data['balance'] ?? 0) + ($benzine92Data['received'] ?? 0) - ($benzine92Data['dispensed'] ?? 0), 2) }}</td>
+                            <td class="fw-bold text-primary">{{ number_format($benzine92Data['actual_balance'] ?? 0, 2) }}</td>
                         </tr>
                         
                         <!-- Benzine 80 -->
@@ -83,7 +78,7 @@
                             <td>{{ number_format($benzine80Data['received'] ?? 0, 2) }}</td>
                             <td class="fw-bold">{{ number_format(($benzine80Data['balance'] ?? 0) + ($benzine80Data['received'] ?? 0), 2) }}</td>
                             <td>{{ number_format($benzine80Data['dispensed'] ?? 0, 2) }}</td>
-                            <td class="fw-bold text-primary">{{ number_format(($benzine80Data['balance'] ?? 0) + ($benzine80Data['received'] ?? 0) - ($benzine80Data['dispensed'] ?? 0), 2) }}</td>
+                            <td class="fw-bold text-primary">{{ number_format($benzine80Data['actual_balance'] ?? 0, 2) }}</td>
                         </tr>
                         
                         <!-- Benzine 95 -->
@@ -93,7 +88,7 @@
                             <td>{{ number_format($benzine95Data['received'] ?? 0, 2) }}</td>
                             <td class="fw-bold">{{ number_format(($benzine95Data['balance'] ?? 0) + ($benzine95Data['received'] ?? 0), 2) }}</td>
                             <td>{{ number_format($benzine95Data['dispensed'] ?? 0, 2) }}</td>
-                            <td class="fw-bold text-primary">{{ number_format(($benzine95Data['balance'] ?? 0) + ($benzine95Data['received'] ?? 0) - ($benzine95Data['dispensed'] ?? 0), 2) }}</td>
+                            <td class="fw-bold text-primary">{{ number_format($benzine95Data['actual_balance'] ?? 0, 2) }}</td>
                         </tr>
                         
                         <!-- زيوت معينة -->
@@ -103,7 +98,7 @@
                             <td>{{ number_format($oilsData['received'] ?? 0, 2) }}</td>
                             <td class="fw-bold">{{ number_format(($oilsData['balance'] ?? 0) + ($oilsData['received'] ?? 0), 2) }}</td>
                             <td>{{ number_format($oilsData['dispensed'] ?? 0, 2) }}</td>
-                            <td class="fw-bold text-primary">{{ number_format(($oilsData['balance'] ?? 0) + ($oilsData['received'] ?? 0) - ($oilsData['dispensed'] ?? 0), 2) }}</td>
+                            <td class="fw-bold text-primary">{{ number_format($oilsData['actual_balance'] ?? 0, 2) }}</td>
                         </tr>
                         
                         <!-- Total Row -->
@@ -113,7 +108,7 @@
                             <td>{{ number_format(($solarData['received'] ?? 0) + ($benzine92Data['received'] ?? 0) + ($benzine80Data['received'] ?? 0) + ($benzine95Data['received'] ?? 0) + ($oilsData['received'] ?? 0), 2) }}</td>
                             <td>{{ number_format((($solarData['balance'] ?? 0) + ($solarData['received'] ?? 0)) + (($benzine92Data['balance'] ?? 0) + ($benzine92Data['received'] ?? 0)) + (($benzine80Data['balance'] ?? 0) + ($benzine80Data['received'] ?? 0)) + (($benzine95Data['balance'] ?? 0) + ($benzine95Data['received'] ?? 0)) + (($oilsData['balance'] ?? 0) + ($oilsData['received'] ?? 0)), 2) }}</td>
                             <td>{{ number_format(($solarData['dispensed'] ?? 0) + ($benzine92Data['dispensed'] ?? 0) + ($benzine80Data['dispensed'] ?? 0) + ($benzine95Data['dispensed'] ?? 0) + ($oilsData['dispensed'] ?? 0), 2) }}</td>
-                            <td class="text-primary">{{ number_format(((($solarData['balance'] ?? 0) + ($solarData['received'] ?? 0)) - ($solarData['dispensed'] ?? 0)) + ((($benzine92Data['balance'] ?? 0) + ($benzine92Data['received'] ?? 0)) - ($benzine92Data['dispensed'] ?? 0)) + ((($benzine80Data['balance'] ?? 0) + ($benzine80Data['received'] ?? 0)) - ($benzine80Data['dispensed'] ?? 0)) + ((($benzine95Data['balance'] ?? 0) + ($benzine95Data['received'] ?? 0)) - ($benzine95Data['dispensed'] ?? 0)) + ((($oilsData['balance'] ?? 0) + ($oilsData['received'] ?? 0)) - ($oilsData['dispensed'] ?? 0)), 2) }}</td>
+                            <td class="text-primary">{{ number_format(($solarData['actual_balance'] ?? 0) + ($benzine92Data['actual_balance'] ?? 0) + ($benzine80Data['actual_balance'] ?? 0) + ($benzine95Data['actual_balance'] ?? 0) + ($oilsData['actual_balance'] ?? 0), 2) }}</td>
                         </tr>
                     </tbody>
                 </table>

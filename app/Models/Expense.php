@@ -12,6 +12,7 @@ class Expense extends Model
     protected $fillable = [
         'shift_id',
         'user_id',
+        'tank_id',
         'category',
         'amount',
         'description',
@@ -34,6 +35,12 @@ class Expense extends Model
     public function shift()
     {
         return $this->belongsTo(Shift::class);
+    }
+
+    // العلاقة مع التانك
+    public function tank()
+    {
+        return $this->belongsTo(Tank::class);
     }
 
     // دالة مساعدة لترجمة الفئات للعربية
