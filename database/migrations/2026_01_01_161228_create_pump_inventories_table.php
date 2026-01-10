@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -21,10 +20,10 @@ return new class extends Migration
             $table->decimal('opening_reading', 10, 2);
             $table->decimal('closing_reading', 10, 2);
             $table->decimal('liters_dispensed', 10, 2);
-            $table->text('notes')->nullable();
+            $table->decimal('sales', 10, 2);
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
-            
+
             $table->index(['inventory_date', 'pump_id']);
             $table->index(['inventory_date', 'nozzle_id']);
         });

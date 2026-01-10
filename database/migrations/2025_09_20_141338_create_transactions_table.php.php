@@ -12,8 +12,10 @@ return new class extends Migration {
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->string('invoice_number')->nullable();
+            $table->string('batch_number')->nullable();
             $table->foreignId('shift_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('pump_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('pump_id')->nullable()->constrained()->cascadeOnDelete();
             $table->unsignedBigInteger('nozzle_id')->nullable();
             $table->foreign('nozzle_id')->references('id')->on('nozzles')->onDelete('cascade');
             $table->foreignId('client_id')->nullable()->constrained()->cascadeOnDelete();
