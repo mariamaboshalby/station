@@ -91,7 +91,7 @@
                         <i class="fas fa-cog me-2"></i> جرد الطلمبات
                     </a>
                     <a href="{{ route('inventory.daily.summary') }}" class="nav-link {{ request()->routeIs('inventory.daily.summary') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
-                        <i class="fas fa-table me-2"></i> اليومي المفصل
+                        <i class="fas fa-table me-2"></i> اليومي المجمل
                     </a>
                     <a href="{{ route('inventory.pump.report') }}" class="nav-link {{ request()->routeIs('inventory.pump.report') ? 'text-white fw-bold' : 'text-white-50' }} py-2">
                         <i class="fas fa-chart-line me-2"></i> تقارير الطلمبات

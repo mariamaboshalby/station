@@ -148,6 +148,7 @@ class TankController extends Controller
                 // Create Expense record
                 Expense::create([
                     'user_id' => auth()->id(),
+                    'tank_id' => $tank->id,
                     'category' => 'purchasing',
                     'amount' => $totalCost,
                     'description' => "تفريغ {$request->amount} لتر في {$tank->name} × {$costPerLiter} ج.م",

@@ -6,20 +6,24 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-1">📊 اليومي المفصل</h2>
-            <p class="text-muted">تاريخ الجرد: {{ $date ?? date('Y-m-d') }}</p>
-            @if(!request()->has('debug'))
-                <a href="{{ request()->url() . (request()->getQueryString() ? '?' . request()->getQueryString() . '&debug=1' : '?debug=1') }}" class="btn btn-sm btn-outline-info">
-                    <i class="fas fa-bug me-1"></i> Debug
-                </a>
-            @endif
+            <p class="text-muted mb-0">تاريخ: {{ $date }}</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('inventory.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-right me-2"></i> رجوع
+            <a href="{{ route('inventory.daily.summary.pdf', ['date' => $date ?? date('Y-m-d')]) }}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-2"></i> PDF
             </a>
-            <button onclick="window.print()" class="btn btn-dark">
+            <a href="{{ route('inventory.daily.summary.excel', ['date' => $date ?? date('Y-m-d')]) }}" class="btn btn-success">
+                <i class="fas fa-file-excel me-2"></i> Excel
+            </a>
+            <button type="button" class="btn btn-info" onclick="window.print()">
                 <i class="fas fa-print me-2"></i> طباعة
             </button>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#actualBalanceModal">
+                <i class="fas fa-calculator me-2"></i>إدخال الرصيد الفعلي
+            </button>
+            <a href="{{ route('inventory.index') }}" class="btn btn-dark">
+                <i class="fas fa-arrow-right me-2"></i>العودة
+            </a>
         </div>
     </div>
 
@@ -66,6 +70,7 @@
                                     <p><strong>Description:</strong> {{ $debug['description'] ?? 'N/A' }}</p>
                                     <p><strong>Extracted Liters:</strong> {{ $debug['extracted_liters'] ?? 'N/A' }}</p>
                                     <p><strong>Tank ID:</strong> {{ $debug['tank_id'] ?? 'N/A' }}</p>
+                                    <p><strong>Tank Name:</strong> {{ $debug['tank_name'] ?? 'N/A' }}</p>
                                     <p><strong>Fuel Type:</strong> {{ $debug['fuel_type'] ?? 'N/A' }}</p>
                                     <p><strong>Will Add To:</strong> {{ $debug['will_add_to'] ?? $debug['error'] ?? 'N/A' }}</p>
                                 </div>
@@ -75,7 +80,21 @@
                         @endif
                     @endif
                     
-                    <h6>Solar Data:</h6>
+                    <h6>Actual Balance Source:</h6>
+                        @if(isset($actualBalanceSource))
+                            @foreach($actualBalanceSource as $fuelKey => $source)
+                                <div class="border p-2 mb-2">
+                                    <p><strong>Fuel Type:</strong> {{ $fuelKey }}</p>
+                                    <p><strong>Is Manual:</strong> {{ $source['is_manual'] ? 'Yes ' : 'No ' }}</p>
+                                    <p><strong>Manual Balance:</strong> {{ $source['manual_balance'] ?? 'N/A' }}</p>
+                                    <p><strong>Automatic Balance:</strong> {{ $source['automatic_balance'] ?? 'N/A' }}</p>
+                                </div>
+                            @endforeach
+                        @else
+                            <p>No actual balance source data available</p>
+                        @endif
+                        
+                        <h6>Solar Data:</h6>
                     <pre>{{ json_encode([
                         'opening_balance' => $solarData['opening_balance'] ?? 0,
                         'received' => $solarData['received'] ?? 0,
@@ -250,6 +269,88 @@
     </div>
 
 </div>
+<!-- Actual Balance Entry Modal -->
+<div class="modal fade" id="actualBalanceModal" tabindex="-1" aria-labelledby="actualBalanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="actualBalanceModalLabel">
+                    <i class="fas fa-calculator me-2"></i>إدخال الرصيد الفعلي - {{ $date }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ route('inventory.actual.balance.store') }}" method="POST" id="actualBalanceForm">
+                    @csrf
+                    <input type="hidden" name="balance_date" value="{{ $date }}">
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center">نوع الوقود</th>
+                                    <th class="text-center">الرصيد الفعلي (لتر)</th>
+                                    <th class="text-center">ملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $fuels = \App\Models\Fuel::all();
+                                    $existingBalances = \App\Models\ActualBalance::with('fuel')
+                                        ->where('balance_date', $date)
+                                        ->get()
+                                        ->keyBy('fuel_id');
+                                @endphp
+                                
+                                @foreach($fuels as $fuel)
+                                    <tr>
+                                        <td class="fw-bold">{{ $fuel->name }}</td>
+                                        <td>
+                                            <input type="number" 
+                                                   name="balances[{{ $fuel->id }}][fuel_id]" 
+                                                   value="{{ $fuel->id }}" 
+                                                   hidden>
+                                            <input type="number" 
+                                                   step="0.01"
+                                                   name="balances[{{ $fuel->id }}][actual_balance]" 
+                                                   value="{{ $existingBalances[$fuel->id]->actual_balance ?? 0 }}" 
+                                                   class="form-control text-center actual-balance-input" 
+                                                   placeholder="0.00"
+                                                   min="0"
+                                                   data-fuel="{{ $fuel->name }}"
+                                                   required>
+                                        </td>
+                                        <td>
+                                            <input type="text" 
+                                                   name="balances[{{ $fuel->id }}][notes]" 
+                                                   value="{{ $existingBalances[$fuel->id]->notes ?? '' }}" 
+                                                   class="form-control" 
+                                                   placeholder="ملاحظات اختيارية">
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>ملاحظة:</strong> الرصيد الفعلي المدخل هنا سيتم استخدامه في التقرير بدلاً من قراءة العداد التلقائية
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>إلغاء
+                </button>
+                <button type="submit" form="actualBalanceForm" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>حفظ الأرصدة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 <style>

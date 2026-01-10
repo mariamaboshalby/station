@@ -8,6 +8,8 @@ use App\Models\Pump;
 use App\Models\Nozzle;
 use App\Models\PumpInventory;
 use App\Models\Inventory;
+use App\Models\ActualBalance;
+use App\Models\Fuel;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Mpdf\Mpdf;
@@ -16,6 +18,14 @@ use Illuminate\Support\Facades\Log;
 
 class InventoryController extends Controller
 {
+    /**
+     * Display inventory main page
+     */
+    public function index()
+    {
+        return view('inventory.index');
+    }
+
     /**
      * Monthly Inventory Index
      */
@@ -64,8 +74,9 @@ class InventoryController extends Controller
             ->where('inventory_date', $date)
             ->get();
         
-        // Get inventory purchases for the specific date from Expense table
-        $inventoryPurchases = Expense::where('expense_date', $date)
+        // Get inventory purchases for the specific date from Expense table with tank relationship
+        $inventoryPurchases = Expense::with('tank.fuel')
+            ->where('expense_date', $date)
             ->where('category', 'purchasing')
             ->get();
         
@@ -89,53 +100,7 @@ class InventoryController extends Controller
             ->where('inventory_date', $previousDate)
             ->get();
 
-        \Log::info('Previous Date: ' . $previousDate);
-        \Log::info('Previous Inventories Count: ' . $previousInventories->count());
-
-        // If no previous day's data, use current day's opening readings as opening balance
-        if ($previousInventories->count() == 0) {
-            \Log::info('No previous day data found, using current day opening readings');
-            foreach ($pumpInventories as $inventory) {
-                $fuelName = $inventory->pump->tank->fuel->name ?? 'غير معروف';
-                $openingReading = $inventory->opening_reading ?? 0;
-                \Log::info('Using current opening reading for fuel: ' . $fuelName . ' with opening: ' . $openingReading);
                 
-                if (strpos($fuelName, 'سولار') !== false) {
-                    $fuelData['solarData']['opening_balance'] += $openingReading;
-                } elseif (strpos($fuelName, 'بنزين 92') !== false) {
-                    $fuelData['benzine92Data']['opening_balance'] += $openingReading;
-                } elseif (strpos($fuelName, 'بنزين 80') !== false) {
-                    $fuelData['benzine80Data']['opening_balance'] += $openingReading;
-                } elseif (strpos($fuelName, 'بنزين 95') !== false) {
-                    $fuelData['benzine95Data']['opening_balance'] += $openingReading;
-                } elseif (strpos($fuelName, 'زيوت') !== false) {
-                    $fuelData['oilsData']['opening_balance'] += $openingReading;
-                }
-            }
-        } else {
-            \Log::info('Previous Inventories Data: ' . json_encode($previousInventories));
-            // Calculate opening balance from previous day's closing readings
-            foreach ($previousInventories as $inventory) {
-                $fuelName = $inventory->pump->tank->fuel->name ?? 'غير معروف';
-                $closingReading = $inventory->closing_reading ?? 0;
-                \Log::info('Processing inventory for fuel: ' . $fuelName . ' with closing reading: ' . $closingReading);
-                
-                if (strpos($fuelName, 'سولار') !== false) {
-                    $fuelData['solarData']['opening_balance'] += $closingReading;
-                } elseif (strpos($fuelName, 'بنزين 92') !== false) {
-                    $fuelData['benzine92Data']['opening_balance'] += $closingReading;
-                } elseif (strpos($fuelName, 'بنزين 80') !== false) {
-                    $fuelData['benzine80Data']['opening_balance'] += $closingReading;
-                } elseif (strpos($fuelName, 'بنزين 95') !== false) {
-                    $fuelData['benzine95Data']['opening_balance'] += $closingReading;
-                } elseif (strpos($fuelName, 'زيوت') !== false) {
-                    $fuelData['oilsData']['opening_balance'] += $closingReading;
-                }
-            }
-        }
-
-        \Log::info('Fuel Data after opening balance calculation: ' . json_encode($fuelData));
-        
         // Process current day's inventories for sales and dispensed amounts
         foreach ($pumpInventories as $inventory) {
             $fuelName = $inventory->pump->tank->fuel->name ?? 'غير معروف';
@@ -145,121 +110,69 @@ class InventoryController extends Controller
             // Dispensed = closing - opening (actual fuel dispensed)
             $dispensed = ($inventory->closing_reading ?? 0) - ($inventory->opening_reading ?? 0);
             
+            // Check if there's a manual actual balance for this fuel type
+            $fuelId = $inventory->pump->tank->fuel->id ?? null;
+            $manualActualBalance = $fuelId ? $this->getManualActualBalance($date, $fuelId) : null;
+            
             // Map fuel names to data keys
             if (strpos($fuelName, 'سولار') !== false) {
                 $fuelData['solarData']['sales'] += $sales;
                 $fuelData['solarData']['dispensed'] += $dispensed;
-                $fuelData['solarData']['actual_balance'] = $sales; // Actual balance = closing reading
+                // Use manual actual balance if available, otherwise use closing reading
+                $fuelData['solarData']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
                 $fuelData['benzine92Data']['sales'] += $sales;
                 $fuelData['benzine92Data']['dispensed'] += $dispensed;
-                $fuelData['benzine92Data']['actual_balance'] = $sales;
+                $fuelData['benzine92Data']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
                 $fuelData['benzine80Data']['sales'] += $sales;
                 $fuelData['benzine80Data']['dispensed'] += $dispensed;
-                $fuelData['benzine80Data']['actual_balance'] = $sales;
+                $fuelData['benzine80Data']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
                 $fuelData['benzine95Data']['sales'] += $sales;
                 $fuelData['benzine95Data']['dispensed'] += $dispensed;
-                $fuelData['benzine95Data']['actual_balance'] = $sales;
+                $fuelData['benzine95Data']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
                 $fuelData['oilsData']['sales'] += $sales;
                 $fuelData['oilsData']['dispensed'] += $dispensed;
-                $fuelData['oilsData']['actual_balance'] = $sales;
+                $fuelData['oilsData']['actual_balance'] = $manualActualBalance ?? $sales;
             }
         }
         
-        // Add purchases from expense table (tank capacity additions)
-        $processingDebug = [];
+        // Process inventory purchases
         foreach ($inventoryPurchases as $expense) {
-            // Extract amount and fuel type from description
-            $description = $expense->description ?? '';
-            $amount = $expense->amount ?? 0;
-            $costPerLiter = 0;
-            $liters = 0;
-            
-            // Parse description to extract liters and fuel type
-            $liters = 0;
-            $tankId = 0;
-            
-            // Pattern 1: "تفريغ 1000 لتر في تانك 1 × 5.00 ج.م" or "تفريغ 1000 لتر في 1 × 5.00 ج.م"
-            if (preg_match('/تفريغ\s+([\d.]+)\s+لتر\s+في\s+(?:تانك\s+)?(\d+)/i', $description, $matches)) {
-                $liters = floatval($matches[1]);
-                $tankId = intval($matches[2]);
-            }
-            // Pattern 2: "1000 لتر تانك 1"
-            elseif (preg_match('/([\d.]+)\s+لتر\s+تانك\s+(\d+)/i', $description, $matches)) {
-                $liters = floatval($matches[1]);
-                $tankId = intval($matches[2]);
-            }
-            // Pattern 3: "tank 1 1000 liters" (English)
-            elseif (preg_match('/tank\s+(\d+)\s+([\d.]+)\s+liters?/i', $description, $matches)) {
-                $tankId = intval($matches[1]);
-                $liters = floatval($matches[2]);
-            }
-            // Pattern 4: Just extract numbers if no tank found
-            elseif (preg_match('/([\d.]+)\s+لتر/i', $description, $matches)) {
-                $liters = floatval($matches[1]);
-                // Try to find tank number from the description
-                if (preg_match('/تانك\s+(\d+)/i', $description, $tankMatches)) {
-                    $tankId = intval($tankMatches[1]);
+            if ($expense->tank && $expense->tank->fuel) {
+                $fuelName = $expense->tank->fuel->name;
+                
+                // Extract liters from description
+                $liters = 0;
+                $description = $expense->description ?? '';
+                if (preg_match('/([\d.]+)\s+لتر/i', $description, $matches)) {
+                    $liters = floatval($matches[1]);
                 }
-                // Also try to find "في [رقم]" as tank number
-                elseif (preg_match('/في\s+(\d+)/i', $description, $tankMatches)) {
-                    $tankId = intval($tankMatches[1]);
-                }
-            }
-            
-            // Only proceed if we found a tank
-            if ($tankId > 0) {
-                // Get tank info to determine fuel type
-                $tank = \App\Models\Tank::with('fuel')->find($tankId);
-                if ($tank) {
-                    $fuelName = $tank->fuel->name ?? 'غير معروف';
-                    
-                    // Add to processing debug
-                    $willAddTo = 'Unknown';
-                    if (strpos($fuelName, 'سولار') !== false) {
-                        $willAddTo = 'Solar';
-                    } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
-                        $willAddTo = 'Benzine 92';
-                    } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
-                        $willAddTo = 'Benzine 80';
-                    } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
-                        $willAddTo = 'Benzine 95';
-                    } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
-                        $willAddTo = 'Oils';
-                    }
-                    
-                    $processingDebug[] = [
-                        'description' => $description,
-                        'extracted_liters' => $liters,
-                        'tank_id' => $tankId,
-                        'fuel_type' => $fuelName,
-                        'will_add_to' => $willAddTo
-                    ];
-                    
-                    // Map fuel names to data keys
-                    if (strpos($fuelName, 'سولار') !== false) {
-                        $fuelData['solarData']['received'] += $liters;
-                    } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
-                        $fuelData['benzine92Data']['received'] += $liters;
-                    } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
-                        $fuelData['benzine80Data']['received'] += $liters;
-                    } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
-                        $fuelData['benzine95Data']['received'] += $liters;
-                    } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
-                        $fuelData['oilsData']['received'] += $liters;
-                    }
+                
+                // Map fuel names to data keys using the tank's fuel type
+                if (strpos($fuelName, 'سولار') !== false) {
+                    $fuelData['solarData']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                    $fuelData['benzine92Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                    $fuelData['benzine80Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                    $fuelData['benzine95Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                    $fuelData['oilsData']['received'] += $liters;
                 }
             } else {
                 $processingDebug[] = [
-                    'description' => $description,
-                    'error' => 'Regex failed - no tank found'
+                    'description' => $expense->description ?? 'N/A',
+                    'tank_id' => $expense->tank_id,
+                    'error' => 'No tank relationship found'
                 ];
             }
         }
         
+                
         // Calculate totals
         $totalBalance = ($fuelData['solarData']['opening_balance'] + $fuelData['benzine92Data']['opening_balance'] + 
                         $fuelData['benzine80Data']['opening_balance'] + $fuelData['benzine95Data']['opening_balance'] + 
@@ -297,7 +210,6 @@ class InventoryController extends Controller
             'inventoryPurchasesCount' => $inventoryPurchases->count(),
             'transactionsCount' => $transactions->count(),
             'transactions' => $transactions,
-            'processingDebug' => $processingDebug,
         ]));
     }
     
@@ -336,19 +248,78 @@ class InventoryController extends Controller
         $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
         $endDate = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();
         
-        // Get all pump inventories for the month
+        // Get all pump inventories for month
         $pumpInventories = PumpInventory::with(['pump.tank.fuel', 'nozzle'])
             ->whereBetween('inventory_date', [$startDate, $endDate])
             ->get();
         
+        // Get inventory purchases (fuel received) from expenses for the month
+        $inventoryPurchases = Expense::with('tank.fuel')
+            ->whereBetween('expense_date', [$startDate, $endDate])
+            ->where('category', 'purchasing')
+            ->get();
+        
+        // Get manual actual balances for the month
+        $actualBalances = ActualBalance::with('fuel')
+            ->whereBetween('balance_date', [$startDate, $endDate])
+            ->get()
+            ->groupBy('fuel_id');
+        
         // Initialize data arrays
         $fuelData = [
-            'solarData' => ['balance' => 0, 'received' => 0, 'dispensed' => 0],
-            'benzine92Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0],
-            'benzine80Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0],
-            'benzine95Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0],
-            'oilsData' => ['balance' => 0, 'received' => 0, 'dispensed' => 0],
+            'solarData' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine92Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine80Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine95Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'oilsData' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
         ];
+        
+        // Process received fuel from expenses
+        foreach ($inventoryPurchases as $expense) {
+            if ($expense->tank && $expense->tank->fuel) {
+                $fuelName = $expense->tank->fuel->name;
+                
+                // Extract liters from description
+                $liters = 0;
+                $description = $expense->description ?? '';
+                if (preg_match('/([\d.]+)\s+لتر/i', $description, $matches)) {
+                    $liters = floatval($matches[1]);
+                }
+                
+                // Add to received based on fuel type
+                if (strpos($fuelName, 'سولار') !== false) {
+                    $fuelData['solarData']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                    $fuelData['benzine92Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                    $fuelData['benzine80Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                    $fuelData['benzine95Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                    $fuelData['oilsData']['received'] += $liters;
+                }
+            }
+        }
+        
+        // Process actual balances from manual entries
+        foreach ($actualBalances as $fuelId => $balanceGroup) {
+            $lastBalance = $balanceGroup->last();
+            if ($lastBalance && $lastBalance->fuel) {
+                $fuelName = $lastBalance->fuel->name;
+                
+                if (strpos($fuelName, 'سولار') !== false) {
+                    $fuelData['solarData']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                    $fuelData['benzine92Data']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                    $fuelData['benzine80Data']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                    $fuelData['benzine95Data']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                    $fuelData['oilsData']['actual_balance'] = $lastBalance->actual_balance;
+                }
+            }
+        }
         
         // Group by fuel type and calculate summary
         foreach ($pumpInventories as $inventory) {
@@ -357,28 +328,22 @@ class InventoryController extends Controller
             // Calculate balance from opening_reading
             $balance = $inventory->opening_reading ?? 0;
             $dispensed = $inventory->sales ?? 0;
-            $received = 0; // This might need to be calculated from other sources
             
             // Map fuel names to data keys
             if (strpos($fuelName, 'سولار') !== false) {
                 $fuelData['solarData']['balance'] += $balance;
-                $fuelData['solarData']['received'] += $received;
                 $fuelData['solarData']['dispensed'] += $dispensed;
             } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
                 $fuelData['benzine92Data']['balance'] += $balance;
-                $fuelData['benzine92Data']['received'] += $received;
                 $fuelData['benzine92Data']['dispensed'] += $dispensed;
             } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
                 $fuelData['benzine80Data']['balance'] += $balance;
-                $fuelData['benzine80Data']['received'] += $received;
                 $fuelData['benzine80Data']['dispensed'] += $dispensed;
             } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
                 $fuelData['benzine95Data']['balance'] += $balance;
-                $fuelData['benzine95Data']['received'] += $received;
                 $fuelData['benzine95Data']['dispensed'] += $dispensed;
             } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
                 $fuelData['oilsData']['balance'] += $balance;
-                $fuelData['oilsData']['received'] += $received;
                 $fuelData['oilsData']['dispensed'] += $dispensed;
             }
         }
@@ -526,5 +491,66 @@ class InventoryController extends Controller
             ->get();
 
         return view('inventory.pump-report', compact('pumpInventories', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Show form to enter actual balances manually
+     */
+    public function actualBalanceForm(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        $fuels = Fuel::all();
+        
+        // Get existing actual balances for the date
+        $existingBalances = ActualBalance::with('fuel')
+            ->where('balance_date', $date)
+            ->get()
+            ->keyBy('fuel_id');
+        
+        return view('inventory.actual-balance-form', compact('date', 'fuels', 'existingBalances'));
+    }
+
+    /**
+     * Store actual balances manually
+     */
+    public function actualBalanceStore(Request $request)
+    {
+        $request->validate([
+            'balance_date' => 'required|date',
+            'balances' => 'required|array',
+            'balances.*.fuel_id' => 'required|exists:fuels,id',
+            'balances.*.actual_balance' => 'required|numeric|min:0',
+        ]);
+
+        $balanceDate = $request->balance_date;
+
+        foreach ($request->balances as $balanceData) {
+            ActualBalance::updateOrCreate(
+                [
+                    'balance_date' => $balanceDate,
+                    'fuel_id' => $balanceData['fuel_id'],
+                ],
+                [
+                    'actual_balance' => $balanceData['actual_balance'],
+                    'user_id' => auth()->id,
+                    'notes' => $balanceData['notes'] ?? null,
+                ]
+            );
+        }
+
+        return redirect()->route('inventory.actual.balance.form', ['date' => $balanceDate])
+            ->with('success', 'تم حفظ الرصيد الفعلي بنجاح ✅');
+    }
+
+    /**
+     * Update dailySummary to use manual actual balances
+     */
+    private function getManualActualBalance($date, $fuelId)
+    {
+        $actualBalance = ActualBalance::where('balance_date', $date)
+            ->where('fuel_id', $fuelId)
+            ->first();
+        
+        return $actualBalance ? $actualBalance->actual_balance : null;
     }
 }
