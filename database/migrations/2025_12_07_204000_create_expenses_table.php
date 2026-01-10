@@ -4,17 +4,18 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('shift_id')->nullable()->constrained()->onDelete('cascade'); // لربط المصروف بالشيفت الحالي
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // الموظف الذي سجل المصروف
+            $table->foreignId('tank_id')->nullable()->constrained()->onDelete('set null');
             $table->enum('category', ['operational', 'labor', 'maintenance', 'purchasing', 'utilities', 'other']); // الفئات المطلوبة
             $table->decimal('amount', 10, 2);
             $table->text('description')->nullable();
+            $table->string('invoice_number')->nullable();
             $table->date('expense_date');
             $table->timestamps();
         });

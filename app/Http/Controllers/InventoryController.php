@@ -15,6 +15,9 @@ use Carbon\Carbon;
 use Mpdf\Mpdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Exports\DailySummaryExport;
+use App\Exports\MonthlySummaryExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryController extends Controller
 {
@@ -105,6 +108,8 @@ class InventoryController extends Controller
         foreach ($pumpInventories as $inventory) {
             $fuelName = $inventory->pump->tank->fuel->name ?? 'غير معروف';
             
+            // Opening balance from opening_reading
+            $openingReading = $inventory->opening_reading ?? 0;
             // Sales = closing reading (end of day reading)
             $sales = $inventory->closing_reading ?? 0;
             // Dispensed = closing - opening (actual fuel dispensed)
@@ -116,23 +121,28 @@ class InventoryController extends Controller
             
             // Map fuel names to data keys
             if (strpos($fuelName, 'سولار') !== false) {
+                $fuelData['solarData']['opening_balance'] += $openingReading;
                 $fuelData['solarData']['sales'] += $sales;
                 $fuelData['solarData']['dispensed'] += $dispensed;
                 // Use manual actual balance if available, otherwise use closing reading
                 $fuelData['solarData']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                $fuelData['benzine92Data']['opening_balance'] += $openingReading;
                 $fuelData['benzine92Data']['sales'] += $sales;
                 $fuelData['benzine92Data']['dispensed'] += $dispensed;
                 $fuelData['benzine92Data']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                $fuelData['benzine80Data']['opening_balance'] += $openingReading;
                 $fuelData['benzine80Data']['sales'] += $sales;
                 $fuelData['benzine80Data']['dispensed'] += $dispensed;
                 $fuelData['benzine80Data']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                $fuelData['benzine95Data']['opening_balance'] += $openingReading;
                 $fuelData['benzine95Data']['sales'] += $sales;
                 $fuelData['benzine95Data']['dispensed'] += $dispensed;
                 $fuelData['benzine95Data']['actual_balance'] = $manualActualBalance ?? $sales;
             } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                $fuelData['oilsData']['opening_balance'] += $openingReading;
                 $fuelData['oilsData']['sales'] += $sales;
                 $fuelData['oilsData']['dispensed'] += $dispensed;
                 $fuelData['oilsData']['actual_balance'] = $manualActualBalance ?? $sales;
@@ -552,5 +562,252 @@ class InventoryController extends Controller
             ->first();
         
         return $actualBalance ? $actualBalance->actual_balance : null;
+    }
+
+    /**
+     * Export Daily Summary to Excel
+     */
+    public function dailySummaryExcel(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        $data = $this->getDailySummaryData($date);
+        
+        return Excel::download(new DailySummaryExport($data, $date), 'daily-summary-' . $date . '.xlsx');
+    }
+
+    /**
+     * Export Daily Summary to PDF
+     */
+    public function dailySummaryPdf(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        $data = $this->getDailySummaryData($date);
+        
+        $html = view('inventory.daily-summary-pdf', $data)->render();
+        
+        $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4', 'orientation' => 'L']);
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('daily-summary-' . $date . '.pdf', 'D');
+    }
+
+    /**
+     * Export Monthly Summary to Excel
+     */
+    public function monthlySummaryExcel(Request $request)
+    {
+        $month = $request->input('month', date('Y-m'));
+        $data = $this->getMonthlySummaryData($month);
+        
+        return Excel::download(new MonthlySummaryExport($data, $month), 'monthly-summary-' . $month . '.xlsx');
+    }
+
+    /**
+     * Export Monthly Summary to PDF
+     */
+    public function monthlySummaryPdf(Request $request)
+    {
+        $month = $request->input('month', date('Y-m'));
+        $data = $this->getMonthlySummaryData($month);
+        
+        $html = view('inventory.monthly-summary-pdf', $data)->render();
+        
+        $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4', 'orientation' => 'L']);
+        $mpdf->WriteHTML($html);
+        return $mpdf->Output('monthly-summary-' . $month . '.pdf', 'D');
+    }
+
+    /**
+     * Get Daily Summary Data
+     */
+    private function getDailySummaryData($date)
+    {
+        $pumpInventories = PumpInventory::with(['pump.tank.fuel', 'nozzle'])
+            ->where('inventory_date', $date)
+            ->get();
+        
+        $inventoryPurchases = Expense::with('tank.fuel')
+            ->where('expense_date', $date)
+            ->where('category', 'purchasing')
+            ->get();
+        
+        $fuelData = [
+            'solarData' => ['opening_balance' => 0, 'received' => 0, 'sales' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine92Data' => ['opening_balance' => 0, 'received' => 0, 'sales' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine80Data' => ['opening_balance' => 0, 'received' => 0, 'sales' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine95Data' => ['opening_balance' => 0, 'received' => 0, 'sales' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'oilsData' => ['opening_balance' => 0, 'received' => 0, 'sales' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+        ];
+        
+        foreach ($pumpInventories as $inventory) {
+            $fuelName = $inventory->pump->tank->fuel->name ?? 'غير معروف';
+            $openingReading = $inventory->opening_reading ?? 0;
+            $sales = $inventory->closing_reading ?? 0;
+            $dispensed = ($inventory->closing_reading ?? 0) - ($inventory->opening_reading ?? 0);
+            $fuelId = $inventory->pump->tank->fuel->id ?? null;
+            $manualActualBalance = $fuelId ? $this->getManualActualBalance($date, $fuelId) : null;
+            
+            if (strpos($fuelName, 'سولار') !== false) {
+                $fuelData['solarData']['opening_balance'] += $openingReading;
+                $fuelData['solarData']['sales'] += $sales;
+                $fuelData['solarData']['dispensed'] += $dispensed;
+                $fuelData['solarData']['actual_balance'] = $manualActualBalance ?? $sales;
+            } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                $fuelData['benzine92Data']['opening_balance'] += $openingReading;
+                $fuelData['benzine92Data']['sales'] += $sales;
+                $fuelData['benzine92Data']['dispensed'] += $dispensed;
+                $fuelData['benzine92Data']['actual_balance'] = $manualActualBalance ?? $sales;
+            } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                $fuelData['benzine80Data']['opening_balance'] += $openingReading;
+                $fuelData['benzine80Data']['sales'] += $sales;
+                $fuelData['benzine80Data']['dispensed'] += $dispensed;
+                $fuelData['benzine80Data']['actual_balance'] = $manualActualBalance ?? $sales;
+            } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                $fuelData['benzine95Data']['opening_balance'] += $openingReading;
+                $fuelData['benzine95Data']['sales'] += $sales;
+                $fuelData['benzine95Data']['dispensed'] += $dispensed;
+                $fuelData['benzine95Data']['actual_balance'] = $manualActualBalance ?? $sales;
+            } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                $fuelData['oilsData']['opening_balance'] += $openingReading;
+                $fuelData['oilsData']['sales'] += $sales;
+                $fuelData['oilsData']['dispensed'] += $dispensed;
+                $fuelData['oilsData']['actual_balance'] = $manualActualBalance ?? $sales;
+            }
+        }
+        
+        foreach ($inventoryPurchases as $expense) {
+            if ($expense->tank && $expense->tank->fuel) {
+                $fuelName = $expense->tank->fuel->name;
+                $liters = 0;
+                $description = $expense->description ?? '';
+                if (preg_match('/([\d.]+)\s+لتر/i', $description, $matches)) {
+                    $liters = floatval($matches[1]);
+                }
+                
+                if (strpos($fuelName, 'سولار') !== false) {
+                    $fuelData['solarData']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                    $fuelData['benzine92Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                    $fuelData['benzine80Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                    $fuelData['benzine95Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                    $fuelData['oilsData']['received'] += $liters;
+                }
+            }
+        }
+        
+        $invoiceNumbers = $inventoryPurchases->pluck('invoice_number')->filter()->unique();
+        $fuelData['invoiceNumber'] = $invoiceNumbers->isNotEmpty() ? $invoiceNumbers->first() : 'INV-' . date('Ymd', strtotime($date));
+        $fuelData['dispensedInvoiceNumber'] = 'DISP-' . date('Ymd', strtotime($date));
+        $fuelData['date'] = $date;
+        
+        return $fuelData;
+    }
+
+    /**
+     * Get Monthly Summary Data
+     */
+    private function getMonthlySummaryData($month)
+    {
+        if (strlen($month) > 7) {
+            $month = substr($month, 0, 7);
+        }
+        
+        $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromFormat('Y-m', $month)->endOfMonth()->toDateString();
+        
+        $pumpInventories = PumpInventory::with(['pump.tank.fuel', 'nozzle'])
+            ->whereBetween('inventory_date', [$startDate, $endDate])
+            ->get();
+        
+        $inventoryPurchases = Expense::with('tank.fuel')
+            ->whereBetween('expense_date', [$startDate, $endDate])
+            ->where('category', 'purchasing')
+            ->get();
+        
+        $actualBalances = ActualBalance::with('fuel')
+            ->whereBetween('balance_date', [$startDate, $endDate])
+            ->get()
+            ->groupBy('fuel_id');
+        
+        $fuelData = [
+            'solarData' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine92Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine80Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'benzine95Data' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+            'oilsData' => ['balance' => 0, 'received' => 0, 'dispensed' => 0, 'actual_balance' => 0],
+        ];
+        
+        foreach ($inventoryPurchases as $expense) {
+            if ($expense->tank && $expense->tank->fuel) {
+                $fuelName = $expense->tank->fuel->name;
+                $liters = 0;
+                $description = $expense->description ?? '';
+                if (preg_match('/([\d.]+)\s+لتر/i', $description, $matches)) {
+                    $liters = floatval($matches[1]);
+                }
+                
+                if (strpos($fuelName, 'سولار') !== false) {
+                    $fuelData['solarData']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                    $fuelData['benzine92Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                    $fuelData['benzine80Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                    $fuelData['benzine95Data']['received'] += $liters;
+                } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                    $fuelData['oilsData']['received'] += $liters;
+                }
+            }
+        }
+        
+        foreach ($actualBalances as $fuelId => $balanceGroup) {
+            $lastBalance = $balanceGroup->last();
+            if ($lastBalance && $lastBalance->fuel) {
+                $fuelName = $lastBalance->fuel->name;
+                
+                if (strpos($fuelName, 'سولار') !== false) {
+                    $fuelData['solarData']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                    $fuelData['benzine92Data']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                    $fuelData['benzine80Data']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                    $fuelData['benzine95Data']['actual_balance'] = $lastBalance->actual_balance;
+                } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                    $fuelData['oilsData']['actual_balance'] = $lastBalance->actual_balance;
+                }
+            }
+        }
+        
+        foreach ($pumpInventories as $inventory) {
+            $fuelName = $inventory->pump->tank->fuel->name ?? 'غير معروف';
+            $balance = $inventory->opening_reading ?? 0;
+            $dispensed = $inventory->sales ?? 0;
+            
+            if (strpos($fuelName, 'سولار') !== false) {
+                $fuelData['solarData']['balance'] += $balance;
+                $fuelData['solarData']['dispensed'] += $dispensed;
+            } elseif (strpos($fuelName, 'بنزين 92') !== false || strpos($fuelName, '92') !== false) {
+                $fuelData['benzine92Data']['balance'] += $balance;
+                $fuelData['benzine92Data']['dispensed'] += $dispensed;
+            } elseif (strpos($fuelName, 'بنزين 80') !== false || strpos($fuelName, '80') !== false) {
+                $fuelData['benzine80Data']['balance'] += $balance;
+                $fuelData['benzine80Data']['dispensed'] += $dispensed;
+            } elseif (strpos($fuelName, 'بنزين 95') !== false || strpos($fuelName, '95') !== false) {
+                $fuelData['benzine95Data']['balance'] += $balance;
+                $fuelData['benzine95Data']['dispensed'] += $dispensed;
+            } elseif (strpos($fuelName, 'زيت') !== false || strpos($fuelName, 'زيوت') !== false) {
+                $fuelData['oilsData']['balance'] += $balance;
+                $fuelData['oilsData']['dispensed'] += $dispensed;
+            }
+        }
+        
+        $fuelData['month'] = $month;
+        $fuelData['startDate'] = $startDate;
+        $fuelData['endDate'] = $endDate;
+        
+        return $fuelData;
     }
 }

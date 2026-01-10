@@ -137,6 +137,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/inventory/report', [\App\Http\Controllers\InventoryController::class, 'report'])->name('inventory.report');
     Route::get('/inventory/export', [\App\Http\Controllers\InventoryController::class, 'export'])->name('inventory.export');
     Route::get('/inventory/daily/summary', [\App\Http\Controllers\InventoryController::class, 'dailySummary'])->name('inventory.daily.summary');
+    Route::get('/inventory/daily/summary/pdf', [\App\Http\Controllers\InventoryController::class, 'dailySummaryPdf'])->name('inventory.daily.summary.pdf');
+    Route::get('/inventory/daily/summary/excel', [\App\Http\Controllers\InventoryController::class, 'dailySummaryExcel'])->name('inventory.daily.summary.excel');
 
     
     /** 🎯 الرصيد الفعلي اليدوي */
@@ -147,6 +149,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/inventory/monthly', [\App\Http\Controllers\InventoryController::class, 'monthlyIndex'])->name('inventory.monthly.index');
     Route::get('/inventory/monthly/detailed', [\App\Http\Controllers\InventoryController::class, 'monthlyDetailed'])->name('inventory.monthly.detailed');
     Route::get('/inventory/monthly/summary', [\App\Http\Controllers\InventoryController::class, 'monthlySummaryNew'])->name('inventory.monthly.summary');
+    Route::get('/inventory/monthly/summary/pdf', [\App\Http\Controllers\InventoryController::class, 'monthlySummaryPdf'])->name('inventory.monthly.summary.pdf');
+    Route::get('/inventory/monthly/summary/excel', [\App\Http\Controllers\InventoryController::class, 'monthlySummaryExcel'])->name('inventory.monthly.summary.excel');
     
     /** 🔧 جرد الطلمبات */
     Route::get('/inventory/pumps', [\App\Http\Controllers\InventoryController::class, 'pumpIndex'])->name('inventory.pump.index');
