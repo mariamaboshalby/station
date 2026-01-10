@@ -87,7 +87,7 @@
                                                             name="nozzles[{{ $nozzle->id }}][opening_reading]"
                                                             class="form-control text-center opening"
                                                             value="{{ $previousDay->closing_reading ?? $nozzle->meter_reading ?? 0 }}"
-                                                            data-nozzle="{{ $nozzle->id }}" readonly>
+                                                            data-nozzle="{{ $nozzle->id }}" >
                                                     </td>
                                                 @endforeach
                                             </tr>
