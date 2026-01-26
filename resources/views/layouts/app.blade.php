@@ -11,15 +11,13 @@
     <link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
 
     <!-- Bootstrap RTL -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
-
+    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.rtl.min.css') }}">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    <link rel="stylesheet" href="{{ asset('assets/css/all.min.css') }}">
     <!-- Google Fonts - Tajawal -->
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="{{ asset('assets/css/fonts.css') }}" rel="stylesheet">
     <!-- CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <link href="{{ asset('assets/css/tom-select.css') }}" rel="stylesheet">
 
     <style>
         :root {
@@ -319,9 +317,11 @@
     });
 </script>
 <!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<!-- Font Awesome -->
+<script src="{{ asset('assets/js/all.min.js') }}"></script>
+<script src="{{ asset('assets/js/tom-select.js') }}"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
 <!-- Laravel stack -->
 @stack('script')
 </body>
