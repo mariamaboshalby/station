@@ -20,8 +20,35 @@ class ReportController extends Controller
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
         $paymentType = $request->input('payment_type', 'all');
         $capital = TreasuryTransaction::where('type', 'income')->where('category', 'رأس المال')->sum('amount');
-        $revenues = Transaction::with(['nozzle.pump.tank.fuel', 'shift', 'client'])->whereDate('created_at', '>=', $startDate)->whereDate('created_at', '<=', $endDate)->when($paymentType == 'credit', fn($q) => $q->whereNotNull('client_id'))->when($paymentType == 'cash', fn($q) => $q->whereNull('client_id'))->get()->map(function ($transaction) {
-            return ['date' => $transaction->created_at, 'category' => 'إيراد', 'type' => $transaction->nozzle->pump->tank->fuel->name ?? 'غير محدد', 'description' => 'بيع وقود - ' . ($transaction->client_id ? 'آجل (' . $transaction->client->name . ')' : 'نقدي'), 'amount' => $transaction->total_amount, 'is_revenue' => true];
+        
+        $revenues = Transaction::with(['nozzle.pump.tank.fuel', 'shift', 'client', 'clientRefuelings'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->when($paymentType == 'credit', fn($q) => $q->whereNotNull('client_id'))
+            ->when($paymentType == 'cash', fn($q) => $q->whereNull('client_id'))
+            ->get();
+        
+        $revenueItems = $revenues->map(function ($transaction) {
+            $isCredit = $transaction->clientRefuelings->isNotEmpty();
+            $amount = 0;
+            
+            if ($isCredit) {
+                // آجل: ناخد المبلغ من client_refuelings
+                $amount = $transaction->clientRefuelings->sum('total_amount');
+            } elseif ($transaction->cash_liters > 0) {
+                // كاش: نحسب السعر الأساسي × اللترات
+                $basePrice = $transaction->nozzle->pump->tank->fuel->price_per_liter ?? 0;
+                $amount = $transaction->cash_liters * $basePrice;
+            }
+            
+            return [
+                'date' => $transaction->created_at,
+                'category' => 'إيراد',
+                'type' => $transaction->nozzle->pump->tank->fuel->name ?? 'غير محدد',
+                'description' => 'بيع وقود - ' . ($transaction->client_id ? 'آجل (' . $transaction->client->name . ')' : 'نقدي'),
+                'amount' => $amount,
+                'is_revenue' => true
+            ];
         });
         $clientPayments = collect([]);
         if ($paymentType == 'all' || $paymentType == 'cash') {
@@ -35,7 +62,7 @@ class ReportController extends Controller
                 return ['date' => $expense->transaction_date, 'category' => 'مصروف', 'type' => $expense->category, 'description' => $expense->description, 'amount' => $expense->amount, 'is_revenue' => false];
             });
         }
-        $allTransactions = $revenues->concat($clientPayments)->concat($expenses)->sortBy('date');
+        $allTransactions = $revenueItems->concat($clientPayments)->concat($expenses)->sortBy('date');
         $balance = 0; $reportData = []; $totalRevenue = 0; $totalExpense = 0; $revenueByType = []; $expenseByCategory = [];
         foreach ($allTransactions as $item) {
             if ($item['is_revenue']) { $balance += $item['amount']; $totalRevenue += $item['amount']; if (!isset($revenueByType[$item['type']])) $revenueByType[$item['type']] = 0; $revenueByType[$item['type']] += $item['amount']; } else { $balance -= $item['amount']; $totalExpense += $item['amount']; if (!isset($expenseByCategory[$item['type']])) $expenseByCategory[$item['type']] = 0; $expenseByCategory[$item['type']] += $item['amount']; }
@@ -67,13 +94,29 @@ class ReportController extends Controller
     private function getRevenuesData(Request $request) {
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
-        $revenues = Transaction::with(['nozzle.pump.tank.fuel', 'shift.user', 'client'])
+        
+        $revenues = Transaction::with(['nozzle.pump.tank.fuel', 'shift.user', 'client', 'clientRefuelings'])
             ->whereDate('created_at', '>=', $startDate)
             ->whereDate('created_at', '<=', $endDate)
             ->latest()->get();
-        $totalRevenue = $revenues->sum('total_amount');
-        $cashRevenue = $revenues->whereNull('client_id')->sum('total_amount');
-        $creditRevenue = $revenues->whereNotNull('client_id')->sum('total_amount');
+        
+        $totalRevenue = 0;
+        $cashRevenue = 0;
+        $creditRevenue = 0;
+        
+        foreach ($revenues as $transaction) {
+            if ($transaction->clientRefuelings->isNotEmpty()) {
+                // آجل: ناخد السعر والمبلغ من client_refuelings
+                $creditRevenue += $transaction->clientRefuelings->sum('total_amount');
+            } elseif ($transaction->cash_liters > 0) {
+                // كاش: نحسب السعر الأساسي × اللترات
+                $basePrice = $transaction->nozzle->pump->tank->fuel->price_per_liter ?? 0;
+                $cashRevenue += $transaction->cash_liters * $basePrice;
+            }
+        }
+        
+        $totalRevenue = $cashRevenue + $creditRevenue;
+        
         return compact('revenues', 'totalRevenue', 'cashRevenue', 'creditRevenue', 'startDate', 'endDate');
     }
 

@@ -22,6 +22,9 @@
                             <tr>
                                 <th>#</th>
                                 <th>الاسم</th>
+                                @foreach ($fuels as $fuel)
+                                    <th>سعر {{ $fuel->name }}</th>
+                                @endforeach
                                 <th>اللترات المسحوبه</th>
                                 <th>المبلغ الكلي</th>
                                 <th>المبلغ المدفوع</th>
@@ -38,6 +41,12 @@
                                 <tr>
                                     <td>{{ $client->id }}</td>
                                     <td>{{ $client->name }}</td>
+                                    @php
+                                        $fuelPrices = $client->fuelPrices->keyBy('fuel_id');
+                                    @endphp
+                                    @foreach ($fuels as $fuel)
+                                        <td>{{ $fuelPrices->get($fuel->id)?->price_per_liter ?? $fuel->price_per_liter }}</td>
+                                    @endforeach
                                     <td>{{ $client->liters_drawn }}</td>
                                     <td>{{ $client->total_price }}</td>
                                     <td>{{ $client->amount_paid }}</td>
@@ -92,8 +101,16 @@
                                     @endcan
                                 </tr>
                             @empty
+                                @php
+                                    $colspan = 2 + $fuels->count() + 5;
+                                @endphp
+                                @can('edit client')
+                                    @php
+                                        $colspan++;
+                                    @endphp
+                                @endcan
                                 <tr>
-                                    <td colspan="8" class="text-center">لا يوجد عملاء حالياً</td>
+                                    <td colspan="{{ $colspan }}" class="text-center">لا يوجد عملاء حالياً</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -25,15 +25,23 @@
                             <input type="number" step="0.01" name="amount_paid" class="form-control" required>
                         </div>
 
+                        @foreach ($fuels as $fuel)
+                            <div class="mb-3">
+                                <label class="form-label">سعر {{ $fuel->name }} للعميل (اختياري)</label>
+                                <input type="number" step="0.01" name="fuel_prices[{{ $fuel->id }}]" class="form-control"
+                                    value="{{ old('fuel_prices.' . $fuel->id) }}" placeholder="الافتراضي: {{ $fuel->price_per_liter }}">
+                            </div>
+                        @endforeach
+
                         <button type="submit" class="btn btn-success">حفظ</button>
                         <a href="{{ route('clients.index') }}" class="btn btn-secondary">رجوع</a>
                     </form>
                 </div>
             </div>
 
+
         </div>
     </div>
 </div>
 @endsection
-    
 @endcan

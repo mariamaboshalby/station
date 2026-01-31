@@ -12,4 +12,9 @@ class Fuel extends Model
     {
         return $this->hasMany(Tank::class);
     }
+
+    public function clientPrices()
+    {
+        return $this->hasMany(ClientFuelPrice::class);
+    }
 }

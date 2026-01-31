@@ -14,17 +14,25 @@ class TreasuryTransaction extends Model
         'category',
         'amount',
         'transaction_date',
+        'date',
         'description',
         'user_id',
+        'shift_id',
     ];
 
     protected $casts = [
         'transaction_date' => 'date',
+        'date' => 'date',
         'amount' => 'decimal:2',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
     }
 }

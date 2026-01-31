@@ -63,6 +63,33 @@
 
                 </x-card>
 
+                @if ($shift->notes || $shift->penalty_amount > 0)
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-header bg-warning-subtle fw-bold">
+                            <i class="fas fa-info-circle me-1"></i> ملخص الإغلاق
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @if ($shift->penalty_amount > 0)
+                                    <div class="col-md-6 mb-3">
+                                        <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded">
+                                            <h6 class="text-danger fw-bold"><i class="fas fa-coins me-1"></i> غرامات مستحقة</h6>
+                                            <p class="fs-4 mb-0 fw-bold">{{ number_format($shift->penalty_amount, 2) }} ج.م</p>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <div class="@if ($shift->penalty_amount > 0) col-md-6 @else col-12 @endif">
+                                    <h6 class="fw-bold text-muted">ملاحظات الإغلاق:</h6>
+                                    <p class="mb-0 bg-light p-3 rounded">
+                                        {{ $shift->notes ?? 'لا يوجد ملاحظات' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
             </div>
         </div>
     @endsection

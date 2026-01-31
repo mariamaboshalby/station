@@ -149,6 +149,30 @@
                                     <textarea name="notes" class="form-control" rows="3" placeholder="أدخل ملاحظات إن وجدت"></textarea>
                                 </div>
 
+                                {{-- الغرامات --}}
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> غرامات على الموظف (إن وجدت)
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-warning text-dark">
+                                            <i class="fas fa-coins"></i>
+                                        </span>
+                                        <input type="number" 
+                                               name="penalty_amount" 
+                                               class="form-control" 
+                                               step="0.01" 
+                                               min="0" 
+                                               value="0"
+                                               placeholder="0.00">
+                                        <span class="input-group-text">جنيه</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        في حالة وجود أخطاء من الموظف، أدخل المبلغ المطلوب دفعه
+                                    </small>
+                                </div>
+
                                 {{-- زر الإغلاق --}}
                                 <button type="submit" class="btn btn-danger w-100 py-2 fs-5 fw-bold shadow-sm">
                                     <i class="fas fa-lock me-2"></i> إغلاق الشيفت

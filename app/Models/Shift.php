@@ -24,6 +24,7 @@ class Shift extends Model implements HasMedia
         'notes',
         'start_time',
         'end_time',
+        'penalty_amount',
     ];
 
     protected $casts = [

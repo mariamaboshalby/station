@@ -27,6 +27,7 @@
                                     <th><i class="fas fa-camera"></i> صوره العداد في بديه الشيفت</th>
                                     <th><i class="fas fa-play-circle"></i> بداية الشيفت</th>
                                     <th><i class="fas fa-stop-circle"></i> نهاية الشيفت</th>
+                                    <th><i class="fas fa-coins"></i> الغرامات</th>
                                     <th><i class="fas fa-check-circle"></i> مطابق</th>
                                     <th><i class="fas fa-cogs"></i> خيارات</th>
                                 </tr>
@@ -50,6 +51,14 @@
                                                 {{ $shift->end_time }}
                                             @else
                                                 <span class="badge bg-success">مفتوح</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($shift->penalty_amount > 0)
+                                                <span class="badge bg-danger text-light fs-6">{{ $shift->penalty_amount }}
+                                                    ج.م</span>
+                                            @else
+                                                <span class="badge bg-success">لا يوجد</span>
                                             @endif
                                         </td>
                                         <td>

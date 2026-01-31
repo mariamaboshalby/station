@@ -146,6 +146,7 @@ class ShiftController extends Controller
             'nozzle_end_readings.*' => 'required|numeric|min:0',
             'captured_images_data' => 'required|string',
             'notes' => 'nullable|string|max:1000',
+            'penalty_amount' => 'nullable|numeric|min:0',
         ]);
 
         \DB::beginTransaction();
@@ -276,7 +277,23 @@ class ShiftController extends Controller
                 'end_time' => now(),
                 'cash_sales' => $totalLitersDispensed,
                 'credit_sales' => $totalCreditLiters,
+                'penalty_amount' => $validated['penalty_amount'] ?? 0,
             ]);
+
+            // ✅ تسجيل الغرامة في الخزنة كمصروف
+            $penaltyAmount = $validated['penalty_amount'] ?? 0;
+            if ($penaltyAmount > 0) {
+                \App\Models\TreasuryTransaction::create([
+                    'type' => 'expense',
+                    'category' => 'penalty', // تصنيف ثابت للغرامات
+                    'amount' => $penaltyAmount,
+                    'description' => 'غرامة على الموظف: ' . $shift->user->name . ' - وردية #' . $shift->id . ' - ' . ($shift->notes ?? ''),
+                    'transaction_date' => now(), // التاريخ الأساسي
+                    'date' => now(), // التاريخ الإضافي
+                    'shift_id' => $shift->id,
+                    'user_id' => auth()->id(), // المسؤول الذي قام بالخصم (الأدمن)
+                ]);
+            }
 
             \DB::commit();
 
