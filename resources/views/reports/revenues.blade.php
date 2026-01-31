@@ -147,6 +147,16 @@
                     </thead>
                     <tbody class="border-top-0">
                         @forelse($revenues as $index => $rev)
+                            @php
+                                $isCredit = $rev->clientRefuelings->isNotEmpty();
+                                $amount = 0;
+                                if ($isCredit) {
+                                    $amount = $rev->clientRefuelings->sum('total_amount');
+                                } elseif ($rev->cash_liters > 0) {
+                                    $basePrice = $rev->nozzle->pump->tank->fuel->price_per_liter ?? 0;
+                                    $amount = $rev->cash_liters * $basePrice;
+                                }
+                            @endphp
                             <tr class="border-bottom border-light">
                                 <td class="px-4 text-muted fw-bold">{{ $index + 1 }}</td>
                                 <td class="px-4 text-muted fw-bold small">
@@ -178,7 +188,7 @@
                                     @endif
                                 </td>
                                 <td class="px-4 text-end fw-bold text-success" dir="ltr">
-                                    {{ number_format($rev->total_amount, 2) }}
+                                    {{ number_format($amount, 2) }}
                                 </td>
                             </tr>
                         @empty

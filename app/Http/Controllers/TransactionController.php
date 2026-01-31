@@ -8,13 +8,15 @@ use App\Models\Pump;
 use App\Models\Client;
 use App\Models\ClientRefueling;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class TransactionController extends Controller
 {
     // عرض كل العمليات
     public function index(Request $request)
     {
-        $query = Transaction::with(['shift.user', 'pump.tank.fuel', 'nozzle', 'client', 'media'])->latest();
+        $query = Transaction::with(['shift.user', 'pump.tank.fuel', 'nozzle', 'client.fuelPrices', 'media', 'clientRefuelings'])->latest();
 
         // تصفية حسب العميل
         if ($request->filled('client_id')) {
@@ -40,10 +42,33 @@ class TransactionController extends Controller
 
         $transactions = $query->get();
 
-        // حساب المبلغ الإجمالي
+        // حساب المبلغ الإجمالي والسعر الفعلي
         $transactions->transform(function ($t) {
-            $price = $t->pump->tank->fuel->price_per_liter ?? 0;
-            $t->total_amount = ($t->credit_liters + $t->cash_liters) * $price;
+            $fuel = $t->pump->tank->fuel;
+            $fuelId = $fuel->id ?? null;
+            $price = $fuel->price_per_liter ?? 0;
+            $totalAmount = 0;
+
+            // لو فيه client_refueling (آجل)، ناخد السعر والمبلغ منه
+            $clientRefueling = $t->clientRefuelings->first();
+            if ($clientRefueling) {
+                $price = $clientRefueling->price_per_liter;
+                $totalAmount = $clientRefueling->total_amount;
+            } else {
+                // لو عميل بس مش آجل، نستخدم سعر العميل المخصص أو الافتراضي
+                if ($t->client && !is_null($fuelId)) {
+                    $customPrice = $t->client->fuelPrices->firstWhere('fuel_id', $fuelId);
+                    if ($customPrice) {
+                        $price = $customPrice->price_per_liter;
+                    } elseif (!is_null($t->client->fuel_price_per_liter)) {
+                        $price = $t->client->fuel_price_per_liter;
+                    }
+                }
+                $totalAmount = ($t->credit_liters + $t->cash_liters) * $price;
+            }
+
+            $t->effective_price_per_liter = $price;
+            $t->total_amount = $totalAmount;
             return $t;
         });
 
@@ -56,12 +81,14 @@ class TransactionController extends Controller
     // نموذج إنشاء عملية جديدة
     public function create()
     {
+        $user = Auth::user();
+
         // 🔹 المسدسات المتاحة
-        if (auth()->user()->hasRole('admin')) {
+        if ($user->hasRole('admin')) {
             $nozzles = \App\Models\Nozzle::with(['pump.tank.fuel'])->get();
         } else {
             // جلب المسدسات المسموح بها للمستخدم
-            $userPumpIds = auth()->user()->getPermissionNames()
+            $userPumpIds = $user->getPermissionNames()
                 ->filter(fn($perm) => str_starts_with($perm, 'use_pump_'))
                 ->map(fn($perm) => (int) str_replace('use_pump_', '', $perm));
 
@@ -71,11 +98,11 @@ class TransactionController extends Controller
         }
 
         // 🔹 الشيفتات
-        if (auth()->user()->hasRole('admin')) {
+        if ($user->hasRole('admin')) {
             $shifts = Shift::with('user')->latest()->get();
         } else {
             $shifts = Shift::with('user')
-                ->where('user_id', auth()->id())
+                ->where('user_id', Auth::id())
                 ->whereNull('end_time')
                 ->latest()
                 ->get();
@@ -106,10 +133,30 @@ class TransactionController extends Controller
         // 🔹 جلب بيانات المسدس ومنها الطلمبة وسعر اللتر
         $nozzle = \App\Models\Nozzle::with('pump.tank.fuel')->findOrFail($validated['nozzle_id']);
         $pump = $nozzle->pump;
-        $fuelPrice = $pump->tank->fuel->price_per_liter ?? 0;
+        $fuel = $pump->tank->fuel;
+        $fuelPrice = $fuel->price_per_liter ?? 0;
+        $fuelId = $fuel->id ?? null;
+
+        $client = null;
+        $pricePerLiter = $fuelPrice;
+
+        if (!empty($validated['client_id'])) {
+            $client = Client::with('fuelPrices')->findOrFail($validated['client_id']);
+
+            if (!is_null($fuelId)) {
+                $customPrice = $client->fuelPrices->firstWhere('fuel_id', $fuelId);
+                if ($customPrice) {
+                    $pricePerLiter = $customPrice->price_per_liter;
+                }
+            }
+
+            if ($pricePerLiter === $fuelPrice && !is_null($client->fuel_price_per_liter)) {
+                $pricePerLiter = $client->fuel_price_per_liter;
+            }
+        }
 
         // 🔹 حساب المجموع الكلي
-        $totalAmount = $validated['credit_liters'] * $fuelPrice;
+        $totalAmount = $validated['credit_liters'] * $pricePerLiter;
 
         // 🔹 إنشاء العملية
         $transaction = Transaction::create([
@@ -152,7 +199,7 @@ class TransactionController extends Controller
                         }
                     } catch (\Exception $e) {
                         // Log error but continue with other images
-                        \Log::error('Error processing captured image: ' . $e->getMessage());
+                        Log::error('Error processing captured image: ' . $e->getMessage());
                         continue;
                     }
                 }
@@ -161,14 +208,12 @@ class TransactionController extends Controller
 
         // 🔹 لو العملية تخص عميل آجل
         if (!empty($validated['client_id'])) {
-            $client = Client::findOrFail($validated['client_id']);
-
             ClientRefueling::create([
                 'client_id' => $client->id,
                 'shift_id' => $validated['shift_id'],
                 'transaction_id' => $transaction->id,
                 'liters' => $validated['credit_liters'],
-                'price_per_liter' => $fuelPrice,
+                'price_per_liter' => $pricePerLiter,
                 'total_amount' => $totalAmount,
             ]);
 

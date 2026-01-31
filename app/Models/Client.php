@@ -11,6 +11,7 @@ class Client extends Model
 
     protected $fillable = [
         'pump_id',
+        'fuel_price_per_liter',
         'name',
         'liters_drawn',
         'total_price',
@@ -30,6 +31,11 @@ class Client extends Model
     public function refuelings()
     {
         return $this->hasMany(ClientRefueling::class);
+    }
+
+    public function fuelPrices()
+    {
+        return $this->hasMany(ClientFuelPrice::class);
     }
 
 }

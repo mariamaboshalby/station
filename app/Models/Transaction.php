@@ -53,4 +53,9 @@ class Transaction extends Model implements HasMedia
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function clientRefuelings()
+    {
+        return $this->hasMany(ClientRefueling::class);
+    }
 }
