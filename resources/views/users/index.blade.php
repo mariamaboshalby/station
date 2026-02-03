@@ -75,9 +75,52 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    {{-- Modern Pagination --}}
+                    <div class="card-footer bg-white border-0 py-4">
+                        {{ $users->links('pagination::bootstrap-5') }}
+                    </div>
                 </div>
 
             </div>
         </div>
     @endsection
 @endcan
+
+<style>
+    /* Modern Pagination Styles */
+    .pagination {
+        justify-content: center;
+        margin: 0;
+    }
+
+    .page-link {
+        color: #00aaffff;
+        border: none;
+        margin: 0 2px;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .page-link:hover {
+        color: #fff;
+        background-color: #667eea;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .page-item.active .page-link {
+        color: #fff;
+        background: linear-gradient(135deg, #667eea 0%, #00aaffff 100%);
+        border: none;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .page-item.disabled .page-link {
+        color: #adb5bd;
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+</style>
