@@ -8,6 +8,8 @@ use App\Models\Transaction;
 use App\Models\Pump;
 use App\Models\Tank;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class ShiftController extends Controller
@@ -119,7 +121,7 @@ class ShiftController extends Controller
                         }
                     } catch (\Exception $e) {
                         // Log error but continue with other images
-                        \Log::error('Error processing captured shift start image: ' . $e->getMessage());
+                        Log::error('Error processing captured shift start image: ' . $e->getMessage());
                         continue;
                     }
                 }
@@ -133,7 +135,38 @@ class ShiftController extends Controller
     // فورم إغلاق شيفت
     public function close($id)
     {
-        $shift = Shift::with('nozzleReadings.nozzle.pump')->findOrFail($id);
+        $shift = Shift::with(['nozzleReadings.nozzle.pump', 'user'])->findOrFail($id);
+
+        // ✅ إصلاح تلقائي: إذا لم تكن هناك قراءات مسجلة للشيفت (لأي سبب)، قم بإنشائها الآن
+        if ($shift->nozzleReadings->isEmpty()) {
+            $user = $shift->user;
+            $nozzles = collect();
+
+            // محاولة جلب الصلاحيات المسندة للمستخدم
+            $userPumpIds = $user->getPermissionNames()
+                ->filter(fn($perm) => str_starts_with($perm, 'use_pump_'))
+                ->map(fn($perm) => (int) str_replace('use_pump_', '', $perm));
+
+            if ($userPumpIds->isNotEmpty()) {
+                $nozzles = \App\Models\Nozzle::whereIn('pump_id', $userPumpIds)->get();
+            } else {
+                // إذا لم يكن لديه صلاحيات محددة، نعتبر أنه يملك صلاحية على الجميع (أو يتم التعامل مع الكل كاحتياطي)
+                $nozzles = \App\Models\Nozzle::all();
+            }
+
+            foreach ($nozzles as $nozzle) {
+                \App\Models\ShiftNozzleReading::create([
+                    'shift_id' => $shift->id,
+                    'nozzle_id' => $nozzle->id,
+                    'start_reading' => $nozzle->meter_reading,
+                ]);
+            }
+
+            // إعادة تحميل العلاقات بعد الإنشاء
+            $shift->refresh();
+            $shift->load(['nozzleReadings.nozzle.pump', 'user']);
+        }
+
         $totalCreditLiters = $shift->transactions()->sum('credit_liters');
 
         return view('shifts.close', compact('shift', 'totalCreditLiters'));
@@ -149,7 +182,7 @@ class ShiftController extends Controller
             'penalty_amount' => 'nullable|numeric|min:0',
         ]);
 
-        \DB::beginTransaction();
+        DB::beginTransaction();
         
         try {
             $totalLitersDispensed = 0;
@@ -264,7 +297,7 @@ class ShiftController extends Controller
                             }
                         } catch (\Exception $e) {
                             // Log error but continue with other images
-                            \Log::error('Error processing captured shift image: ' . $e->getMessage());
+                            Log::error('Error processing captured shift image: ' . $e->getMessage());
                             continue;
                         }
                     }
@@ -295,7 +328,7 @@ class ShiftController extends Controller
                 ]);
             }
 
-            \DB::commit();
+            DB::commit();
 
             // ✅ التوجيه النهائي
             if (auth()->user()->hasRole('admin')) {
@@ -303,12 +336,12 @@ class ShiftController extends Controller
                     ->with('success', '✅ تم إغلاق الشيفت وتسجيل الصورة والعملية بنجاح.');
             }
 
-            auth()->logout();
-            return redirect()->route('login')
+       
+            return redirect()->route('home.buttons')
                 ->with('success', '✅ تم إغلاق الشيفت وتسجيل الخروج بنجاح.');
 
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             return back()->with('error', 'حدث خطأ: ' . $e->getMessage());
         }
     }
@@ -319,8 +352,14 @@ class ShiftController extends Controller
     public function report($id)
     {
         $shift = Shift::with(['transactions.pump.tank.fuel', 'user'])->find($id);
+
         if (!$shift) {
             return redirect()->back()->with('error', 'الشيفت غير موجود ❌');
+        }
+
+        // 🔒 تحقق أمني: الموظف العادي لا يرى إلا تقاريره
+        if (!auth()->user()->hasRole('admin') && $shift->user_id !== auth()->id()) {
+            abort(403, 'غير مصرح لك بمشاهدة هذا التقرير');
         }
 
         return view('shifts.report', compact('shift'));

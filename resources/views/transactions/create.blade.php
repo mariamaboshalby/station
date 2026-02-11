@@ -39,31 +39,37 @@
                             @endif
 
                             {{-- Image Gallery Modal --}}
-                            <div class="modal fade" id="imageGalleryModal_transaction_gallery" tabindex="-1" aria-hidden="true">
+                            <div class="modal fade" id="imageGalleryModal_transaction_gallery" tabindex="-1"
+                                aria-hidden="true">
                                 <div class="modal-dialog modal-xl modal-dialog-centered">
                                     <div class="modal-content bg-dark">
                                         <div class="modal-header border-0">
                                             <h5 class="modal-title text-white">معرض الصور</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body p-0">
-                                            <div id="galleryCarousel_transaction_gallery" class="carousel slide" data-bs-ride="carousel">
+                                            <div id="galleryCarousel_transaction_gallery" class="carousel slide"
+                                                data-bs-ride="carousel">
                                                 <div class="carousel-inner">
                                                     <!-- Images will be populated dynamically -->
                                                 </div>
-                                                
-                                                <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel_transaction_gallery" data-bs-slide="prev">
+
+                                                <button class="carousel-control-prev" type="button"
+                                                    data-bs-target="#galleryCarousel_transaction_gallery" data-bs-slide="prev">
                                                     <span class="carousel-control-prev-icon"></span>
                                                     <span class="visually-hidden">السابق</span>
                                                 </button>
-                                                <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel_transaction_gallery" data-bs-slide="next">
+                                                <button class="carousel-control-next" type="button"
+                                                    data-bs-target="#galleryCarousel_transaction_gallery" data-bs-slide="next">
                                                     <span class="carousel-control-next-icon"></span>
                                                     <span class="visually-hidden">التالي</span>
                                                 </button>
                                             </div>
-                                            
+
                                             <!-- Thumbnail Navigation -->
-                                            <div class="bg-dark p-3 border-top border-secondary" id="thumbnailNav_transaction_gallery" style="display: none;">
+                                            <div class="bg-dark p-3 border-top border-secondary"
+                                                id="thumbnailNav_transaction_gallery" style="display: none;">
                                                 <!-- Thumbnails will be populated dynamically -->
                                             </div>
                                         </div>
@@ -105,15 +111,15 @@
                                     <input type="text" class="form-control text-center bg-light" value="آجل" readonly>
                                 </div>
 
-                                {{-- المسدس --}}
+                                {{-- نوع البنزين --}}
                                 <div class="mb-3">
-                                    <label for="nozzle_id" class="form-label fw-bold">المسدس (الطلمبة)</label>
-                                    <select name="nozzle_id" id="nozzle_id" class="form-select" required>
-                                        <option value="">-- اختر المسدس المستخدم --</option>
-                                        @foreach ($nozzles as $nozzle)
-                                            <option value="{{ $nozzle->id }}">
-                                                {{ $nozzle->name }} - {{ $nozzle->pump->name }}
-                                                ({{ $nozzle->pump->tank->fuel->name }})
+                                    <label for="tank_id" class="form-label fw-bold">نوع البنزين</label>
+                                    <select name="tank_id" id="tank_id" class="form-select" required>
+                                        <option value="">-- اختر نوع البنزين --</option>
+                                        @foreach ($tanks as $tank)
+                                            <option value="{{ $tank->id }}" data-fuel-name="{{ $tank->fuel->name }}"
+                                                data-tank-name="{{ $tank->name }}">
+                                                {{ $tank->fuel->name }} - {{ $tank->name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -144,23 +150,28 @@
                                 {{-- صورة العداد --}}
                                 <div class="mb-3">
                                     <label for="image" class="form-label fw-bold">صورة العداد</label>
-                                    
+
                                     <!-- Camera capture section -->
                                     <div id="camera_section" class="capture-section">
-                                        <video id="camera_video" style="width: 100%; max-height: 300px; border-radius: 8px; display: none;" autoplay></video>
+                                        <video id="camera_video"
+                                            style="width: 100%; max-height: 300px; border-radius: 8px; display: none;"
+                                            autoplay></video>
                                         <canvas id="camera_canvas" style="display: none;"></canvas>
-                                        
+
                                         <div class="d-grid gap-2 mb-3">
                                             <button type="button" id="start_camera" class="btn btn-primary">
                                                 <i class="fas fa-video me-1"></i> تشغيل الكاميرا
                                             </button>
-                                            <button type="button" id="capture_photo" class="btn btn-success" style="display: none;">
+                                            <button type="button" id="capture_photo" class="btn btn-success"
+                                                style="display: none;">
                                                 <i class="fas fa-camera me-1"></i> التقاط صورة
                                             </button>
-                                            <button type="button" id="add_more_photos" class="btn btn-info" style="display: none;">
+                                            <button type="button" id="add_more_photos" class="btn btn-info"
+                                                style="display: none;">
                                                 <i class="fas fa-plus me-1"></i> إضافة صورة إضافية
                                             </button>
-                                            <button type="button" id="retake_photo" class="btn btn-warning" style="display: none;">
+                                            <button type="button" id="retake_photo" class="btn btn-warning"
+                                                style="display: none;">
                                                 <i class="fas fa-redo me-1"></i> إعادة التصوير
                                             </button>
                                         </div>
@@ -181,7 +192,8 @@
                                 {{-- الملاحظات --}}
                                 <div class="mb-3">
                                     <label for="notes" class="form-label fw-bold">ملاحظات</label>
-                                    <textarea name="notes" id="notes" rows="3" class="form-control" placeholder="اكتب أي ملاحظات إضافية..."></textarea>
+                                    <textarea name="notes" id="notes" rows="3" class="form-control"
+                                        placeholder="اكتب أي ملاحظات إضافية..."></textarea>
                                 </div>
 
                                 {{-- زر الحفظ --}}
@@ -205,6 +217,7 @@
             let capturedImagesData = [];
 
             document.addEventListener('DOMContentLoaded', function() {
+
                 // Client search functionality
                 new TomSelect("#client_id", {
                     valueField: 'id',
@@ -245,12 +258,16 @@
                 // Start camera
                 startCameraBtn.addEventListener('click', async function() {
                     try {
-                        stream = await navigator.mediaDevices.getUserMedia({ 
-                            video: { 
+                        stream = await navigator.mediaDevices.getUserMedia({
+                            video: {
                                 facingMode: 'environment',
-                                width: { ideal: 1280 },
-                                height: { ideal: 720 }
-                            } 
+                                width: {
+                                    ideal: 1280
+                                },
+                                height: {
+                                    ideal: 720
+                                }
+                            }
                         });
                         video.srcObject = stream;
                         video.style.display = 'block';
@@ -258,7 +275,9 @@
                         capturePhotoBtn.style.display = 'block';
                     } catch (err) {
                         console.error('Error accessing camera:', err);
-                        alert('لا يمكن الوصول إلى الكاميرا. يرجى التأكد من منح الإذن واستخدام كاميرا تعمل.');
+                        alert(
+                            'لا يمكن الوصول إلى الكاميرا. يرجى التأكد من منح الإذن واستخدام كاميرا تعمل.'
+                        );
                     }
                 });
 
@@ -268,16 +287,16 @@
                     canvas.height = video.videoHeight;
                     const context = canvas.getContext('2d');
                     context.drawImage(video, 0, 0);
-                    
+
                     const imageData = canvas.toDataURL('image/jpeg', 0.8);
                     capturedImagesData.push(imageData);
-                    
+
                     displayPhoto(imageData, capturedImagesData.length - 1);
                     updatePhotosData();
-                    
+
                     capturePhotoBtn.style.display = 'none';
                     addMorePhotosBtn.style.display = 'block';
-                    
+
                     stopCamera();
                 });
 
@@ -321,19 +340,19 @@
                 // Update photos display - Updated for Gallery Component
                 function updatePhotosDisplay() {
                     photoCount.textContent = capturedImagesData.length;
-                    
+
                     // Update the gallery component by refreshing the container
                     const galleryContainer = document.getElementById('gallery_transaction_gallery');
                     if (galleryContainer) {
                         // Clear and rebuild the gallery
                         const parent = galleryContainer.parentElement;
                         galleryContainer.remove();
-                        
+
                         // Create new gallery with updated images
                         const newGalleryHtml = createGalleryHtml(capturedImagesData, 'transaction_gallery');
                         parent.insertAdjacentHTML('beforeend', newGalleryHtml);
                     }
-                    
+
                     // Show/hide retake button
                     if (capturedImagesData.length > 0) {
                         retakePhotoBtn.style.display = 'block';
@@ -346,7 +365,7 @@
                 function createGalleryHtml(images, galleryId) {
                     let html = `<div id="gallery_${galleryId}" class="gallery-container">`;
                     html += '<div class="row g-2">';
-                    
+
                     images.forEach((imageData, index) => {
                         html += `
                             <div class="col-md-3 col-6 gallery-item">
@@ -373,9 +392,9 @@
                             </div>
                         `;
                     });
-                    
+
                     html += '</div>';
-                    
+
                     if (images.length > 3) {
                         html += `
                             <div class="text-center mt-2">
@@ -387,7 +406,7 @@
                             </div>
                         `;
                     }
-                    
+
                     html += '</div>';
                     return html;
                 }
@@ -410,15 +429,16 @@
                 window.openGalleryModal = function(galleryId, startIndex = 0) {
                     const modal = document.getElementById('imageGalleryModal_' + galleryId);
                     const carousel = document.getElementById('galleryCarousel_' + galleryId);
-                    
+
                     if (modal && carousel) {
                         // Update carousel images
                         const carouselInner = carousel.querySelector('.carousel-inner');
                         carouselInner.innerHTML = '';
-                        
+
                         capturedImagesData.forEach((imageData, index) => {
                             const carouselItem = document.createElement('div');
-                            carouselItem.className = `carousel-item ${index === startIndex ? 'active' : ''}`;
+                            carouselItem.className =
+                                `carousel-item ${index === startIndex ? 'active' : ''}`;
                             carouselItem.innerHTML = `
                                 <div class="text-center bg-dark">
                                     <img src="${imageData}" 
@@ -432,7 +452,7 @@
                             `;
                             carouselInner.appendChild(carouselItem);
                         });
-                        
+
                         // Update thumbnails
                         const thumbnailNav = document.getElementById('thumbnailNav_' + galleryId);
                         if (capturedImagesData.length > 1) {
@@ -440,26 +460,26 @@
                             thumbnailNav.innerHTML = `
                                 <div class="d-flex gap-2 overflow-auto justify-content-center">
                                     ${capturedImagesData.map((imageData, index) => `
-                                        <button type="button" 
-                                                class="btn btn-outline-light p-1 ${index === startIndex ? 'active' : ''}" 
-                                                data-bs-target="#galleryCarousel_${galleryId}" 
-                                                data-bs-slide-to="${index}"
-                                                style="min-width: 60px;">
-                                            <img src="${imageData}" 
-                                                 alt="صورة ${index + 1}" 
-                                                 class="img-thumbnail" 
-                                                 style="width: 50px; height: 50px; object-fit: cover;">
-                                        </button>
-                                    `).join('')}
+                                                                        <button type="button" 
+                                                                                class="btn btn-outline-light p-1 ${index === startIndex ? 'active' : ''}" 
+                                                                                data-bs-target="#galleryCarousel_${galleryId}" 
+                                                                                data-bs-slide-to="${index}"
+                                                                                style="min-width: 60px;">
+                                                                            <img src="${imageData}" 
+                                                                                 alt="صورة ${index + 1}" 
+                                                                                 class="img-thumbnail" 
+                                                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                                                        </button>
+                                                                    `).join('')}
                                 </div>
                             `;
                         } else {
                             thumbnailNav.style.display = 'none';
                         }
-                        
+
                         const bsCarousel = new bootstrap.Carousel(carousel);
                         bsCarousel.to(startIndex);
-                        
+
                         const bsModal = new bootstrap.Modal(modal);
                         bsModal.show();
                     }

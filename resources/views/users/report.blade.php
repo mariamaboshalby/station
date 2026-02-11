@@ -10,7 +10,7 @@
 
                 @foreach ($shifts as $shift)
                     <div class="mb-4">
-                        <div class="card shadow-sm mb-2 overflow-auto" >
+                        <div class="card shadow-sm mb-2 overflow-auto">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div>
                                     <strong>شيفت #{{ $shift->id }}</strong>
@@ -48,12 +48,52 @@
                                             @foreach ($shift->transactions as $transaction)
                                                 <tr>
                                                     <td>{{ $loop->iteration }}</td>
-                                                    <td>{{ optional($transaction->pump->tank->fuel)->name ?? '---' }}</td>
+                                                    @php
+                                                        $fuelName =
+                                                            optional($transaction->pump->tank->fuel)->name ?? '---';
+                                                        $badgeClass = '';
+                                                        if (str_contains($fuelName, '95')) {
+                                                            $badgeClass = 'bg-danger text-white';
+                                                        } elseif (str_contains($fuelName, '80')) {
+                                                            $badgeClass = 'bg-primary text-white';
+                                                        } elseif (str_contains($fuelName, '92')) {
+                                                            $badgeClass = 'bg-success text-white';
+                                                        } elseif (str_contains($fuelName, 'سولار')) {
+                                                            $badgeClass = 'bg-warning text-dark';
+                                                        } else {
+                                                            $badgeClass = 'bg-secondary text-white';
+                                                        }
+                                                    @endphp
+                                                    <td>
+                                                        <span
+                                                            class="badge {{ $badgeClass }} fs-6">{{ $fuelName }}</span>
+                                                    </td>
                                                     <td>{{ optional($transaction->pump->tank)->name ?? '---' }}</td>
                                                     <td>{{ optional($transaction->pump)->name ?? '---' }}</td>
                                                     <td>{{ $transaction->credit_liters }}</td>
                                                     <td>{{ $transaction->cash_liters }}</td>
-                                                    <td>{{ number_format($transaction->total_amount, 2) }}</td>
+                                                    @php
+                                                        // 1. تحديد السعر: سعر الموظف للوقود المحدد (لو موجود) أو سعر الوقود الرسمي
+                                                        $fuelP = $transaction->pump->tank->fuel;
+                                                        $fuelId = $fuelP->id;
+                                                        // البحث في أسعار الموظف عن سعر لهذا الوقود
+                                                        $empPriceObj = $user->fuelPrices->firstWhere(
+                                                            'fuel_id',
+                                                            $fuelId,
+                                                        );
+                                                        $finalPrice = $empPriceObj
+                                                            ? $empPriceObj->price
+                                                            : $fuelP->price_per_liter ?? 0;
+
+                                                        // 2. حساب إجمالي اللترات
+                                                        $totalLiters =
+                                                            ($transaction->credit_liters ?? 0) +
+                                                            ($transaction->cash_liters ?? 0);
+
+                                                        // 3. حساب المبلغ
+                                                        $accountableAmount = $totalLiters * $finalPrice;
+                                                    @endphp
+                                                    <td class="fw-bold">{{ number_format($accountableAmount, 2) }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>

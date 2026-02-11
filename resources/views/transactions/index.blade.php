@@ -91,11 +91,26 @@
                                 @forelse($transactions as $transaction)
                                     <tr>
                                         <td>{{ $transaction->shift->user->name ?? '-' }}</td>
+                                        @php
+                                            $fuelName = optional($transaction->pump->tank->fuel)->name ?? '---';
+                                            $badgeClass = '';
+                                            if (str_contains($fuelName, '95')) {
+                                                $badgeClass = 'bg-danger text-white';
+                                            } elseif (str_contains($fuelName, '80')) {
+                                                $badgeClass = 'bg-primary text-white';
+                                            } elseif (str_contains($fuelName, '92')) {
+                                                $badgeClass = 'bg-success text-white';
+                                            } elseif (str_contains($fuelName, 'سولار')) {
+                                                $badgeClass = 'bg-warning text-dark';
+                                            } else {
+                                                $badgeClass = 'bg-secondary text-white';
+                                            }
+                                        @endphp
                                         <td>
-                                        {{ $transaction->nozzle->name ?? '-' }} -
                                             {{ $transaction->pump->name ?? '-' }} - تانك
                                             {{ $transaction->pump->tank->name ?? '-' }} -
-                                            {{ $transaction->pump->tank->fuel->name ?? '-' }}</td>
+                                            <span class="badge {{ $badgeClass }} fs-6">{{ $transaction->pump->tank->fuel->name ?? '-' }}</span>
+                                        </td>
                                         <td>{{ $transaction->client->name ?? '-' }}</td>
                                         <td>{{ $transaction->credit_liters }}</td>
                                         <td>{{ $transaction->cash_liters }}</td>
@@ -104,73 +119,91 @@
                                             @if ($transaction->hasMedia('transactions'))
                                                 @php
                                                     $images = $transaction->getMedia('transactions');
-                                                    $imageUrls = $images->map(fn($media) => $media->getUrl())->toArray();
+                                                    $imageUrls = $images
+                                                        ->map(fn($media) => $media->getUrl())
+                                                        ->toArray();
                                                 @endphp
-                                                
-                                                @if(count($imageUrls) > 0)
+
+                                                @if (count($imageUrls) > 0)
                                                     <!-- Display all images in a small gallery -->
                                                     <div class="d-flex gap-1 flex-wrap">
-                                                        @foreach($imageUrls as $index => $imageUrl)
-                                                            <img src="{{ $imageUrl }}" 
-                                                                 alt="صورة {{ $index + 1 }}" 
-                                                                 class="img-thumbnail rounded cursor-pointer" 
-                                                                 style="width: 35px; height: 35px; object-fit: cover;"
-                                                                 onclick="openGalleryModal('transaction_{{ $transaction->id }}', {{ $index }})">
+                                                        @foreach ($imageUrls as $index => $imageUrl)
+                                                            <img src="{{ $imageUrl }}" alt="صورة {{ $index + 1 }}"
+                                                                class="img-thumbnail rounded cursor-pointer"
+                                                                style="width: 35px; height: 35px; object-fit: cover;"
+                                                                onclick="openGalleryModal('transaction_{{ $transaction->id }}', {{ $index }})">
                                                         @endforeach
                                                     </div>
-                                                    
+
                                                     <!-- Gallery Modal -->
-                                                    <div class="modal fade" id="imageGalleryModal_transaction_{{ $transaction->id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal fade"
+                                                        id="imageGalleryModal_transaction_{{ $transaction->id }}"
+                                                        tabindex="-1" aria-hidden="true">
                                                         <div class="modal-dialog modal-xl modal-dialog-centered">
                                                             <div class="modal-content bg-dark">
                                                                 <div class="modal-header border-0">
-                                                                    <h5 class="modal-title text-white">صور العملية #{{ $transaction->id }}</h5>
-                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                    <h5 class="modal-title text-white">صور العملية
+                                                                        #{{ $transaction->id }}</h5>
+                                                                    <button type="button" class="btn-close btn-close-white"
+                                                                        data-bs-dismiss="modal" aria-label="Close"></button>
                                                                 </div>
                                                                 <div class="modal-body p-0">
-                                                                    <div id="galleryCarousel_transaction_{{ $transaction->id }}" class="carousel slide" data-bs-ride="carousel">
+                                                                    <div id="galleryCarousel_transaction_{{ $transaction->id }}"
+                                                                        class="carousel slide" data-bs-ride="carousel">
                                                                         <div class="carousel-inner">
-                                                                            @foreach($imageUrls as $index => $imageUrl)
-                                                                                <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                                                                            @foreach ($imageUrls as $index => $imageUrl)
+                                                                                <div
+                                                                                    class="carousel-item {{ $index == 0 ? 'active' : '' }}">
                                                                                     <div class="text-center bg-dark">
-                                                                                        <img src="{{ $imageUrl }}" 
-                                                                                             alt="صورة {{ $index + 1 }}" 
-                                                                                             class="img-fluid" 
-                                                                                             style="max-height: 80vh; width: auto;">
-                                                                                        <div class="carousel-caption d-none d-md-block">
-                                                                                            <h5>صورة {{ $index + 1 }} من {{ count($imageUrls) }}</h5>
+                                                                                        <img src="{{ $imageUrl }}"
+                                                                                            alt="صورة {{ $index + 1 }}"
+                                                                                            class="img-fluid"
+                                                                                            style="max-height: 80vh; width: auto;">
+                                                                                        <div
+                                                                                            class="carousel-caption d-none d-md-block">
+                                                                                            <h5>صورة {{ $index + 1 }} من
+                                                                                                {{ count($imageUrls) }}</h5>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
                                                                             @endforeach
                                                                         </div>
-                                                                        
-                                                                        @if(count($imageUrls) > 1)
-                                                                            <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel_transaction_{{ $transaction->id }}" data-bs-slide="prev">
-                                                                                <span class="carousel-control-prev-icon"></span>
+
+                                                                        @if (count($imageUrls) > 1)
+                                                                            <button class="carousel-control-prev"
+                                                                                type="button"
+                                                                                data-bs-target="#galleryCarousel_transaction_{{ $transaction->id }}"
+                                                                                data-bs-slide="prev">
+                                                                                <span
+                                                                                    class="carousel-control-prev-icon"></span>
                                                                                 <span class="visually-hidden">السابق</span>
                                                                             </button>
-                                                                            <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel_transaction_{{ $transaction->id }}" data-bs-slide="next">
-                                                                                <span class="carousel-control-next-icon"></span>
+                                                                            <button class="carousel-control-next"
+                                                                                type="button"
+                                                                                data-bs-target="#galleryCarousel_transaction_{{ $transaction->id }}"
+                                                                                data-bs-slide="next">
+                                                                                <span
+                                                                                    class="carousel-control-next-icon"></span>
                                                                                 <span class="visually-hidden">التالي</span>
                                                                             </button>
                                                                         @endif
                                                                     </div>
-                                                                    
+
                                                                     <!-- Thumbnail Navigation -->
-                                                                    @if(count($imageUrls) > 1)
+                                                                    @if (count($imageUrls) > 1)
                                                                         <div class="bg-dark p-3 border-top border-secondary">
-                                                                            <div class="d-flex gap-2 overflow-auto justify-content-center">
-                                                                                @foreach($imageUrls as $index => $imageUrl)
-                                                                                    <button type="button" 
-                                                                                            class="btn btn-outline-light p-1 {{ $index == 0 ? 'active' : '' }}" 
-                                                                                            data-bs-target="#galleryCarousel_transaction_{{ $transaction->id }}" 
-                                                                                            data-bs-slide-to="{{ $index }}"
-                                                                                            style="min-width: 60px;">
-                                                                                        <img src="{{ $imageUrl }}" 
-                                                                                             alt="صورة {{ $index + 1 }}" 
-                                                                                             class="img-thumbnail" 
-                                                                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                                                            <div
+                                                                                class="d-flex gap-2 overflow-auto justify-content-center">
+                                                                                @foreach ($imageUrls as $index => $imageUrl)
+                                                                                    <button type="button"
+                                                                                        class="btn btn-outline-light p-1 {{ $index == 0 ? 'active' : '' }}"
+                                                                                        data-bs-target="#galleryCarousel_transaction_{{ $transaction->id }}"
+                                                                                        data-bs-slide-to="{{ $index }}"
+                                                                                        style="min-width: 60px;">
+                                                                                        <img src="{{ $imageUrl }}"
+                                                                                            alt="صورة {{ $index + 1 }}"
+                                                                                            class="img-thumbnail"
+                                                                                            style="width: 50px; height: 50px; object-fit: cover;">
                                                                                     </button>
                                                                                 @endforeach
                                                                             </div>
@@ -191,73 +224,92 @@
                                             @if ($transaction->shift && $transaction->shift->hasMedia('end_meter_images'))
                                                 @php
                                                     $endImages = $transaction->shift->getMedia('end_meter_images');
-                                                    $endImageUrls = $endImages->map(fn($media) => $media->getUrl())->toArray();
+                                                    $endImageUrls = $endImages
+                                                        ->map(fn($media) => $media->getUrl())
+                                                        ->toArray();
                                                 @endphp
-                                                
-                                                @if(count($endImageUrls) > 0)
+
+                                                @if (count($endImageUrls) > 0)
                                                     <!-- Display all end images in a small gallery -->
                                                     <div class="d-flex gap-1 flex-wrap">
-                                                        @foreach($endImageUrls as $index => $imageUrl)
-                                                            <img src="{{ $imageUrl }}" 
-                                                                 alt="صورة إغلاق {{ $index + 1 }}" 
-                                                                 class="img-thumbnail rounded cursor-pointer" 
-                                                                 style="width: 35px; height: 35px; object-fit: cover;"
-                                                                 onclick="openGalleryModal('shift_end_{{ $transaction->id }}', {{ $index }})">
+                                                        @foreach ($endImageUrls as $index => $imageUrl)
+                                                            <img src="{{ $imageUrl }}"
+                                                                alt="صورة إغلاق {{ $index + 1 }}"
+                                                                class="img-thumbnail rounded cursor-pointer"
+                                                                style="width: 35px; height: 35px; object-fit: cover;"
+                                                                onclick="openGalleryModal('shift_end_{{ $transaction->id }}', {{ $index }})">
                                                         @endforeach
                                                     </div>
-                                                    
+
                                                     <!-- Gallery Modal -->
-                                                    <div class="modal fade" id="imageGalleryModal_shift_end_{{ $transaction->id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal fade"
+                                                        id="imageGalleryModal_shift_end_{{ $transaction->id }}"
+                                                        tabindex="-1" aria-hidden="true">
                                                         <div class="modal-dialog modal-xl modal-dialog-centered">
                                                             <div class="modal-content bg-dark">
                                                                 <div class="modal-header border-0">
-                                                                    <h5 class="modal-title text-white">صور إغلاق الشيفت - العملية #{{ $transaction->id }}</h5>
-                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                    <h5 class="modal-title text-white">صور إغلاق الشيفت -
+                                                                        العملية #{{ $transaction->id }}</h5>
+                                                                    <button type="button" class="btn-close btn-close-white"
+                                                                        data-bs-dismiss="modal" aria-label="Close"></button>
                                                                 </div>
                                                                 <div class="modal-body p-0">
-                                                                    <div id="galleryCarousel_shift_end_{{ $transaction->id }}" class="carousel slide" data-bs-ride="carousel">
+                                                                    <div id="galleryCarousel_shift_end_{{ $transaction->id }}"
+                                                                        class="carousel slide" data-bs-ride="carousel">
                                                                         <div class="carousel-inner">
-                                                                            @foreach($endImageUrls as $index => $imageUrl)
-                                                                                <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                                                                            @foreach ($endImageUrls as $index => $imageUrl)
+                                                                                <div
+                                                                                    class="carousel-item {{ $index == 0 ? 'active' : '' }}">
                                                                                     <div class="text-center bg-dark">
-                                                                                        <img src="{{ $imageUrl }}" 
-                                                                                             alt="صورة إغلاق {{ $index + 1 }}" 
-                                                                                             class="img-fluid" 
-                                                                                             style="max-height: 80vh; width: auto;">
-                                                                                        <div class="carousel-caption d-none d-md-block">
-                                                                                            <h5>صورة {{ $index + 1 }} من {{ count($endImageUrls) }}</h5>
+                                                                                        <img src="{{ $imageUrl }}"
+                                                                                            alt="صورة إغلاق {{ $index + 1 }}"
+                                                                                            class="img-fluid"
+                                                                                            style="max-height: 80vh; width: auto;">
+                                                                                        <div
+                                                                                            class="carousel-caption d-none d-md-block">
+                                                                                            <h5>صورة {{ $index + 1 }} من
+                                                                                                {{ count($endImageUrls) }}</h5>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
                                                                             @endforeach
                                                                         </div>
-                                                                        
-                                                                        @if(count($endImageUrls) > 1)
-                                                                            <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel_shift_end_{{ $transaction->id }}" data-bs-slide="prev">
-                                                                                <span class="carousel-control-prev-icon"></span>
+
+                                                                        @if (count($endImageUrls) > 1)
+                                                                            <button class="carousel-control-prev"
+                                                                                type="button"
+                                                                                data-bs-target="#galleryCarousel_shift_end_{{ $transaction->id }}"
+                                                                                data-bs-slide="prev">
+                                                                                <span
+                                                                                    class="carousel-control-prev-icon"></span>
                                                                                 <span class="visually-hidden">السابق</span>
                                                                             </button>
-                                                                            <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel_shift_end_{{ $transaction->id }}" data-bs-slide="next">
-                                                                                <span class="carousel-control-next-icon"></span>
+                                                                            <button class="carousel-control-next"
+                                                                                type="button"
+                                                                                data-bs-target="#galleryCarousel_shift_end_{{ $transaction->id }}"
+                                                                                data-bs-slide="next">
+                                                                                <span
+                                                                                    class="carousel-control-next-icon"></span>
                                                                                 <span class="visually-hidden">التالي</span>
                                                                             </button>
                                                                         @endif
                                                                     </div>
-                                                                    
+
                                                                     <!-- Thumbnail Navigation -->
-                                                                    @if(count($endImageUrls) > 1)
+                                                                    @if (count($endImageUrls) > 1)
                                                                         <div class="bg-dark p-3 border-top border-secondary">
-                                                                            <div class="d-flex gap-2 overflow-auto justify-content-center">
-                                                                                @foreach($endImageUrls as $index => $imageUrl)
-                                                                                    <button type="button" 
-                                                                                            class="btn btn-outline-light p-1 {{ $index == 0 ? 'active' : '' }}" 
-                                                                                            data-bs-target="#galleryCarousel_shift_end_{{ $transaction->id }}" 
-                                                                                            data-bs-slide-to="{{ $index }}"
-                                                                                            style="min-width: 60px;">
-                                                                                        <img src="{{ $imageUrl }}" 
-                                                                                             alt="صورة إغلاق {{ $index + 1 }}" 
-                                                                                             class="img-thumbnail" 
-                                                                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                                                            <div
+                                                                                class="d-flex gap-2 overflow-auto justify-content-center">
+                                                                                @foreach ($endImageUrls as $index => $imageUrl)
+                                                                                    <button type="button"
+                                                                                        class="btn btn-outline-light p-1 {{ $index == 0 ? 'active' : '' }}"
+                                                                                        data-bs-target="#galleryCarousel_shift_end_{{ $transaction->id }}"
+                                                                                        data-bs-slide-to="{{ $index }}"
+                                                                                        style="min-width: 60px;">
+                                                                                        <img src="{{ $imageUrl }}"
+                                                                                            alt="صورة إغلاق {{ $index + 1 }}"
+                                                                                            class="img-thumbnail"
+                                                                                            style="width: 50px; height: 50px; object-fit: cover;">
                                                                                     </button>
                                                                                 @endforeach
                                                                             </div>

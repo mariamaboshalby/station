@@ -51,6 +51,23 @@
                                     المرور</label>
                                 <input type="password" name="password_confirmation" class="form-control" required>
                             </div>
+
+                            <div class="col-12 mt-3">
+                                <h5 class="text-primary fw-bold border-bottom pb-2"><i class="fa fa-gas-pump me-1"></i> أسعار
+                                    الوقود المخصصة (اختياري)</h5>
+                                <div class="row">
+                                    @foreach ($fuels as $fuel)
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">{{ $fuel->name }} <span
+                                                    class="text-muted small">(الرسمي:
+                                                    {{ $fuel->price_per_liter }})</span></label>
+                                            <input type="number" step="0.001" name="fuel_prices[{{ $fuel->id }}]"
+                                                class="form-control" placeholder="اتركه فارغاً للسعر الرسمي"
+                                                value="{{ old('fuel_prices.' . $fuel->id) }}">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
                     </div>
 
