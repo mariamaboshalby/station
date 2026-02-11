@@ -50,7 +50,12 @@ Route::get('/home-buttons', function () {
         ->whereNull('end_time')
         ->first();
 
-    return view('home-buttons', compact('openShift'));
+    $lastClosedShift = Shift::where('user_id', $user->id)
+        ->whereNotNull('end_time')
+        ->latest('end_time')
+        ->first();
+
+    return view('home-buttons', compact('openShift', 'lastClosedShift'));
 })->middleware('auth')->name('home.buttons');
 
 // ✅ كل الروتات اللي محتاجة تسجيل دخول
@@ -65,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/shifts/{id}/close', [ShiftController::class, 'closeStore'])->name('shifts.close');
     Route::get('/shifts/{shift}/report', [ShiftController::class, 'report'])->name('shifts.report');
     Route::get('/users/{id}/shifts', [ShiftController::class, 'userShifts'])->name('users.shifts');
+    Route::get('/shifts/current/details', [ShiftController::class, 'currentShiftDetails'])->name('shifts.current.details');
 
     /** 🛢️ التانكات */
     Route::resource('tanks', TankController::class);

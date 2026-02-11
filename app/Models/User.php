@@ -15,6 +15,7 @@ class User extends Authenticatable
         'name',
         'phone',
         'password',
+        'fuel_price',
     ];
 
     protected $hidden = [
@@ -34,5 +35,11 @@ class User extends Authenticatable
     public function shifts()
     {
         return $this->hasMany(Shift::class);
+    }
+
+    // أسعار الوقود الخاصة بالمستخدم
+    public function fuelPrices()
+    {
+        return $this->hasMany(UserFuelPrice::class);
     }
 }

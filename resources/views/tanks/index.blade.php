@@ -6,7 +6,7 @@
             <div class="row justify-content-center">
                 <div class="col-12">
 
-                    <x-card title="قائمة التانكات" >
+                    <x-card title="قائمة التانكات">
 
                         <div class="d-flex justify-content-between mb-3">
                             <span></span>
@@ -37,7 +37,24 @@
                                 @forelse($tanks as $tank)
                                     <tr>
                                         <td>{{ $tank->id }}</td>
-                                        <td>تانك : {{ $tank->name }} - {{ $tank->fuel->name }}</td>
+                                        @php
+                                            $fuelName = optional($tank->fuel)->name ?? '---';
+                                            $badgeClass = '';
+                                            if (str_contains($fuelName, '95')) {
+                                                $badgeClass = 'bg-danger text-white';
+                                            } elseif (str_contains($fuelName, '80')) {
+                                                $badgeClass = 'bg-primary text-white';
+                                            } elseif (str_contains($fuelName, '92')) {
+                                                $badgeClass = 'bg-success text-white';
+                                            } elseif (str_contains($fuelName, 'سولار')) {
+                                                $badgeClass = 'bg-warning text-dark';
+                                            } else {
+                                                $badgeClass = 'bg-secondary text-white';
+                                            }
+                                        @endphp
+                                        <td>تانك : {{ $tank->name }}<br>
+                                             <span class="badge {{ $badgeClass }} fs-6">{{ $tank->fuel->name ?? '-' }}</span>
+                                        </td>
                                         <td>{{ $tank->fuel->price_per_liter }}</td>
                                         <td>{{ $tank->fuel->price_for_owner }}</td>
                                         <td>{{ $tank->capacity }}</td>
@@ -59,12 +76,12 @@
                                                     label="إضافة" :href="route('tanks.addCapacityForm', $tank->id)" />
 
                                                 {{-- زر حذف --}}
-                                                <form action="{{ route('tanks.destroy', $tank->id) }}" method="POST" class="d-inline"
-                                                    onsubmit="return confirm('هل أنت متأكد من حذف هذا التانك؟');">
+                                                <form action="{{ route('tanks.destroy', $tank->id) }}" method="POST"
+                                                    class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا التانك؟');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-danger">
-                                                        <i class="fas fa-trash"></i> 
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
                                             </td>

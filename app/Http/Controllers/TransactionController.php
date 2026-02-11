@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Shift;
 use App\Models\Pump;
+use App\Models\Tank;
 use App\Models\Client;
 use App\Models\ClientRefueling;
 use Illuminate\Http\Request;
@@ -55,16 +56,23 @@ class TransactionController extends Controller
                 $price = $clientRefueling->price_per_liter;
                 $totalAmount = $clientRefueling->total_amount;
             } else {
-                // لو عميل بس مش آجل، نستخدم سعر العميل المخصص أو الافتراضي
-                if ($t->client && !is_null($fuelId)) {
-                    $customPrice = $t->client->fuelPrices->firstWhere('fuel_id', $fuelId);
-                    if ($customPrice) {
-                        $price = $customPrice->price_per_liter;
-                    } elseif (!is_null($t->client->fuel_price_per_liter)) {
-                        $price = $t->client->fuel_price_per_liter;
-                    }
+            // تحديد السعر المبدئي: سعر الوقود أو سعر الموظف
+            $shiftUserPrice = $t->shift->user->fuel_price ?? null;
+            if ($shiftUserPrice) {
+                 $price = $shiftUserPrice;
+            }
+
+            // لو عميل بس مش آجل، نستخدم سعر العميل المخصص
+            if ($t->client && !is_null($fuelId)) {
+                $customPrice = $t->client->fuelPrices->firstWhere('fuel_id', $fuelId);
+                if ($customPrice) {
+                    $price = $customPrice->price_per_liter;
+                } elseif (!is_null($t->client->fuel_price_per_liter)) {
+                    // هنا ممكن نقرر هل سعر العميل يغلب سعر الموظف؟ غالباً آه
+                    $price = $t->client->fuel_price_per_liter;
                 }
-                $totalAmount = ($t->credit_liters + $t->cash_liters) * $price;
+            }
+            $totalAmount = ($t->credit_liters + $t->cash_liters) * $price;
             }
 
             $t->effective_price_per_liter = $price;
@@ -83,18 +91,16 @@ class TransactionController extends Controller
     {
         $user = Auth::user();
 
-        // 🔹 المسدسات المتاحة
+        // 🔹 التانكات المتاحة (نوع الوقود) حسب صلاحيات المستخدم
         if ($user->hasRole('admin')) {
-            $nozzles = \App\Models\Nozzle::with(['pump.tank.fuel'])->get();
+            $tanks = Tank::with('fuel')->get();
         } else {
-            // جلب المسدسات المسموح بها للمستخدم
             $userPumpIds = $user->getPermissionNames()
                 ->filter(fn($perm) => str_starts_with($perm, 'use_pump_'))
                 ->map(fn($perm) => (int) str_replace('use_pump_', '', $perm));
 
-            $nozzles = \App\Models\Nozzle::with(['pump.tank.fuel'])
-                ->whereIn('pump_id', $userPumpIds)
-                ->get();
+            $tankIds = Pump::whereIn('id', $userPumpIds)->pluck('tank_id')->unique();
+            $tanks = Tank::with('fuel')->whereIn('id', $tankIds)->get();
         }
 
         // 🔹 الشيفتات
@@ -114,7 +120,7 @@ class TransactionController extends Controller
         // 🔹 تحديد الشيفت الحالي
         $shift = $shifts->first();
 
-        return view('transactions.create', compact('clients', 'nozzles', 'shift', 'shifts'));
+        return view('transactions.create', compact('clients', 'tanks', 'shift', 'shifts'));
     }
 
     // حفظ العملية
@@ -122,7 +128,7 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'shift_id' => 'required|exists:shifts,id',
-            'nozzle_id' => 'required|exists:nozzles,id',
+            'tank_id' => 'required|exists:tanks,id',
             'credit_liters' => 'required|numeric|min:0.01',
             'vehicle_number' => 'nullable|string|max:50',
             'captured_images_data' => 'required|string',
@@ -130,11 +136,17 @@ class TransactionController extends Controller
             'client_id' => 'nullable|exists:clients,id',
         ]);
 
-        // 🔹 جلب بيانات المسدس ومنها الطلمبة وسعر اللتر
-        $nozzle = \App\Models\Nozzle::with('pump.tank.fuel')->findOrFail($validated['nozzle_id']);
-        $pump = $nozzle->pump;
-        $fuel = $pump->tank->fuel;
-        $fuelPrice = $fuel->price_per_liter ?? 0;
+        // 🔹 جلب بيانات التانك ونوع الوقود وسعر اللتر
+        $tank = Tank::with(['fuel', 'pumps'])->findOrFail($validated['tank_id']);
+        $fuel = $tank->fuel;
+        $pump = $tank->pumps->first();
+        
+        // جلب الشيفت والمستخدم لتحديد السعر
+        $shift = Shift::with('user')->findOrFail($validated['shift_id']);
+        $userFuelPrice = $shift->user->fuel_price;
+
+        // تحديد السعر الأساسي: سعر الموظف لو موجود، وإلا سعر الوقود الأصلي
+        $fuelPrice = $userFuelPrice ?? ($fuel->price_per_liter ?? 0);
         $fuelId = $fuel->id ?? null;
 
         $client = null;
@@ -161,8 +173,8 @@ class TransactionController extends Controller
         // 🔹 إنشاء العملية
         $transaction = Transaction::create([
             'shift_id' => $validated['shift_id'],
-            'pump_id' => $pump->id,
-            'nozzle_id' => $nozzle->id,
+            'pump_id' => $pump ? $pump->id : null,
+            'nozzle_id' => $pump ? optional($pump->nozzles()->first())->id : null,
             'client_id' => $validated['client_id'] ?? null,
             'vehicle_number' => $validated['vehicle_number'] ?? null,
             'credit_liters' => $validated['credit_liters'],

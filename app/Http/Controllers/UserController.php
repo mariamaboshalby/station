@@ -28,7 +28,8 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $permissions = Permission::all();
-        return view('users.create', compact('roles', 'permissions'));
+        $fuels = \App\Models\Fuel::all();
+        return view('users.create', compact('roles', 'permissions', 'fuels'));
     }
 
     /**
@@ -40,6 +41,8 @@ class UserController extends Controller
             'name'         => 'required|string|max:255',
             'phone'        => 'required|digits:11|unique:users,phone',
             'password'     => 'required|min:4|confirmed',
+            'fuel_prices'  => 'nullable|array',
+            'fuel_prices.*'=> 'nullable|numeric|min:0',
             'permissions'  => 'nullable|array',
             'permissions.*'=> 'string',
         ]);
@@ -48,12 +51,25 @@ class UserController extends Controller
 
         try {
             $user = User::create([
-                'name'     => $validated['name'],
-                'phone'    => $validated['phone'],
-                'password' => Hash::make($validated['password']),
+                'name'       => $validated['name'],
+                'phone'      => $validated['phone'],
+                'password'   => Hash::make($validated['password']),
             ]);
 
-            // ✅ ربط الصلاحيات (حتى لو مفيش، هيعمل sync بـ array فاضي)
+            // حفظ أسعار الوقود الخاصة
+            if (!empty($validated['fuel_prices'])) {
+                foreach ($validated['fuel_prices'] as $fuelId => $price) {
+                    if ($price !== null) {
+                        \App\Models\UserFuelPrice::create([
+                            'user_id' => $user->id,
+                            'fuel_id' => $fuelId,
+                            'price'   => $price,
+                        ]);
+                    }
+                }
+            }
+
+            // ربط الصلاحيات
             $permissionsToSync = [];
             if (!empty($validated['permissions'])) {
                 $permissionsToSync = Permission::whereIn('name', $validated['permissions'])->pluck('id')->toArray();
@@ -77,7 +93,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::with(['roles', 'permissions'])->findOrFail($id);
+        $user = User::with(['roles', 'permissions', 'fuelPrices'])->findOrFail($id);
         return view('users.show', compact('user'));
     }
 
@@ -86,11 +102,12 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $user = User::with('permissions')->findOrFail($id);
+        $user = User::with('permissions', 'fuelPrices')->findOrFail($id);
         $roles = Role::all();
         $permissions = Permission::all();
+        $fuels = \App\Models\Fuel::all();
 
-        return view('users.edit', compact('user', 'roles', 'permissions'));
+        return view('users.edit', compact('user', 'roles', 'permissions', 'fuels'));
     }
 
     /**
@@ -100,10 +117,18 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // إذا كانت كلمة المرور فارغة، نقوم بإزالتها من الطلب لتجنب مشاكل التحقق
+        if (empty($request->password)) {
+            $request->request->remove('password');
+            $request->request->remove('password_confirmation');
+        }
+
         $validated = $request->validate([
             'name'         => 'required|string|max:255',
             'phone'        => 'required|digits:11|unique:users,phone,' . $user->id,
-            'password'     => 'nullable|min:8|confirmed',
+            'password'     => 'nullable|min:4|confirmed',
+            'fuel_prices'  => 'nullable|array',
+            'fuel_prices.*'=> 'nullable|numeric|min:0',
             'permissions'  => 'nullable|array',
             'permissions.*'=> 'string',
         ]);
@@ -113,8 +138,8 @@ class UserController extends Controller
         try {
             // تحديث البيانات الأساسية
             $updateData = [
-                'name'  => $validated['name'],
-                'phone' => $validated['phone'],
+                'name'       => $validated['name'],
+                'phone'      => $validated['phone'],
             ];
 
             // تحديث كلمة المرور لو موجودة
@@ -124,13 +149,25 @@ class UserController extends Controller
 
             $user->update($updateData);
 
-            // ✅ تحديث الصلاحيات دائماً (حتى لو array فاضي)
+            // تحديث أسعار الوقود الخاصة (حذف القديم وإضافة الجديد)
+            $user->fuelPrices()->delete();
+            if (!empty($validated['fuel_prices'])) {
+                foreach ($validated['fuel_prices'] as $fuelId => $price) {
+                    if ($price !== null) {
+                        \App\Models\UserFuelPrice::create([
+                            'user_id' => $user->id,
+                            'fuel_id' => $fuelId,
+                            'price'   => $price,
+                        ]);
+                    }
+                }
+            }
+
+            // تحديث الصلاحيات
             $permissionsToSync = [];
             if (!empty($validated['permissions'])) {
                 $permissionsToSync = Permission::whereIn('name', $validated['permissions'])->pluck('id')->toArray();
             }
-            
-            // هنا بنعمل sync دائماً، لو مفيش permissions هيمسح الكل
             $user->syncPermissions($permissionsToSync);
 
             DB::commit();
