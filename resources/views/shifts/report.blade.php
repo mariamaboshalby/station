@@ -97,6 +97,95 @@
 
                 </x-card>
 
+                @if (!$shift->transactions->isEmpty())
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-header bg-primary text-white fw-bold">
+                            <i class="fas fa-chart-bar me-1"></i> ملخص المبيعات حسب نوع الوقود
+                        </div>
+                        <div class="card-body">
+                            @php
+                                // تجميع البيانات حسب نوع الوقود
+                                $fuelSummary = [];
+                                $grandTotal = 0;
+
+                                foreach ($shift->transactions as $transaction) {
+                                    $fuel = $transaction->pump->tank->fuel;
+                                    $fuelId = $fuel->id;
+                                    $fuelName = $fuel->name;
+
+                                    // تحديد السعر (سعر الموظف أو السعر الرسمي)
+                                    $empPriceObj = $shift->user->fuelPrices->firstWhere('fuel_id', $fuelId);
+                                    $finalPrice = $empPriceObj ? $empPriceObj->price : ($fuel->price_per_liter ?? 0);
+
+                                    // حساب اللترات
+                                    $totalLiters = ($transaction->credit_liters ?? 0) + ($transaction->cash_liters ?? 0);
+                                    $amount = $totalLiters * $finalPrice;
+
+                                    // تجميع البيانات
+                                    if (!isset($fuelSummary[$fuelName])) {
+                                        $fuelSummary[$fuelName] = [
+                                            'liters' => 0,
+                                            'amount' => 0,
+                                            'price' => $finalPrice,
+                                            'fuel_name' => $fuelName
+                                        ];
+                                    }
+
+                                    $fuelSummary[$fuelName]['liters'] += $totalLiters;
+                                    $fuelSummary[$fuelName]['amount'] += $amount;
+                                    $grandTotal += $amount;
+                                }
+                            @endphp
+
+                            <table class="table table-bordered text-center align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>نوع الوقود</th>
+                                        <th>إجمالي اللترات</th>
+                                        <th>السعر/لتر</th>
+                                        <th>إجمالي المبلغ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($fuelSummary as $summary)
+                                        @php
+                                            $badgeClass = '';
+                                            if (str_contains($summary['fuel_name'], '95')) {
+                                                $badgeClass = 'bg-danger text-white';
+                                            } elseif (str_contains($summary['fuel_name'], '80')) {
+                                                $badgeClass = 'bg-primary text-white';
+                                            } elseif (str_contains($summary['fuel_name'], '92')) {
+                                                $badgeClass = 'bg-success text-white';
+                                            } elseif (str_contains($summary['fuel_name'], 'سولار')) {
+                                                $badgeClass = 'bg-warning text-dark';
+                                            } else {
+                                                $badgeClass = 'bg-secondary text-white';
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td><span class="badge {{ $badgeClass }} fs-6">{{ $summary['fuel_name'] }}</span></td>
+                                            <td class="fw-bold">{{ number_format($summary['liters'], 2) }} لتر</td>
+                                            <td>{{ number_format($summary['price'], 2) }} ج.م</td>
+                                            <td class="fw-bold text-success">{{ number_format($summary['amount'], 2) }} ج.م</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-dark">
+                                    <tr>
+                                        <td colspan="3" class="fw-bold fs-5">إجمالي المبلغ المستحق</td>
+                                        <td class="fw-bold fs-5 text-warning">{{ number_format($grandTotal, 2) }} ج.م</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            <div class="alert alert-info mt-3 mb-0 text-center">
+                                <i class="fas fa-hand-holding-usd me-2"></i>
+                                <strong>الموظف {{ $shift->user->name }} يجب أن يسلم مبلغ: {{ number_format($grandTotal, 2) }} جنيه</strong>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 @if ($shift->notes || $shift->penalty_amount > 0)
                     <div class="card mt-4 shadow-sm">
                         <div class="card-header bg-warning-subtle fw-bold">
