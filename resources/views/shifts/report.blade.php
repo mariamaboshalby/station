@@ -23,6 +23,7 @@
                                     <th>التانك</th>
                                     <th>طلمبه</th>
                                     <th>لترات اجل</th>
+                                    <th>عميل</th>
                                     <th>لترات كاش</th>
                                     <th>إجمالي السعر</th>
                                     <th>صوره</th>
@@ -54,6 +55,7 @@
                                         <td>{{ $transaction->pump->tank->name }}</td>
                                         <td>{{ $transaction->pump->name }}</td>
                                         <td>{{ $transaction->credit_liters }}</td>
+                                        <td>{{ $transaction->client->name ??'كاش' }}</td>
                                         <td>{{ $transaction->cash_liters }}</td>
                                         @php
                                             // 1. تحديد السعر: سعر الموظف للوقود المحدد (لو موجود) أو سعر الوقود الرسمي
@@ -69,8 +71,8 @@
                                             $totalLiters =
                                                 ($transaction->credit_liters ?? 0) + ($transaction->cash_liters ?? 0);
 
-                                            // 3. حساب المبلغ
-                                            $accountableAmount = $totalLiters * $finalPrice;
+                                            // 3. حساب المبلغ (فقط على أساس الكاش، لأن الأجل دين على العملاء)
+                                            $accountableAmount = ($transaction->cash_liters ?? 0) * $finalPrice;
                                         @endphp
                                         <td class="fw-bold">{{ number_format($accountableAmount, 2) }}</td>
                                         <td>
@@ -117,9 +119,9 @@
                                     $empPriceObj = $shift->user->fuelPrices->firstWhere('fuel_id', $fuelId);
                                     $finalPrice = $empPriceObj ? $empPriceObj->price : ($fuel->price_per_liter ?? 0);
 
-                                    // حساب اللترات
-                                    $totalLiters = ($transaction->credit_liters ?? 0) + ($transaction->cash_liters ?? 0);
-                                    $amount = $totalLiters * $finalPrice;
+                                    // حساب اللترات (فقط الكاش، لأن الأجل دين على العملاء)
+                                    $cashLiters = ($transaction->cash_liters ?? 0);
+                                    $amount = $cashLiters * $finalPrice;
 
                                     // تجميع البيانات
                                     if (!isset($fuelSummary[$fuelName])) {
@@ -131,7 +133,7 @@
                                         ];
                                     }
 
-                                    $fuelSummary[$fuelName]['liters'] += $totalLiters;
+                                    $fuelSummary[$fuelName]['liters'] += $cashLiters;
                                     $fuelSummary[$fuelName]['amount'] += $amount;
                                     $grandTotal += $amount;
                                 }
